@@ -31,8 +31,9 @@ class Reranker(Protocol):
 
 
 class FastembedEmbedder:
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, threads: int | None = None) -> None:
         self.model_name = model_name
+        self.threads = threads
         self._model = None
         self._lock = threading.Lock()
 
@@ -42,7 +43,7 @@ class FastembedEmbedder:
                 from fastembed import TextEmbedding
 
                 log.info("loading embedding model %s", self.model_name)
-                self._model = TextEmbedding(self.model_name)
+                self._model = TextEmbedding(self.model_name, threads=self.threads)
         return self._model
 
     def embed(self, texts: list[str]) -> np.ndarray:
@@ -50,8 +51,9 @@ class FastembedEmbedder:
 
 
 class FastembedReranker:
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, threads: int | None = None) -> None:
         self.model_name = model_name
+        self.threads = threads
         self._model = None
         self._lock = threading.Lock()
 
@@ -61,7 +63,7 @@ class FastembedReranker:
                 from fastembed.rerank.cross_encoder import TextCrossEncoder
 
                 log.info("loading rerank model %s", self.model_name)
-                self._model = TextCrossEncoder(self.model_name)
+                self._model = TextCrossEncoder(self.model_name, threads=self.threads)
         return self._model
 
     def score(self, query: str, texts: list[str]) -> list[float]:

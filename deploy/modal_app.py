@@ -27,6 +27,8 @@ image = (
         "ASSAY_USE_OLLAMA": "false",
         "ASSAY_DB_PATH": "/tmp/assay.db",
         "ASSAY_CORS_ORIGINS": "[]",
+        # One physical core is two vCPUs; more threads than that fight over the quota.
+        "ASSAY_MODEL_THREADS": "2",
     })
     .add_local_dir(str(REPO / "src"), "/root/src", copy=True)
     .add_local_dir(str(REPO / "web"), "/root/web", copy=True)

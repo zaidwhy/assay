@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     min_source_rerank: float = -4.0
     embed_model: str = "BAAI/bge-small-en-v1.5"
     rerank_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
+    # Threads for the two local models; unset lets ONNX Runtime pick. In a container it sees the
+    # host's cores, not the quota, and oversubscribes: retrieval took 11-20 s on a 1-core container.
+    model_threads: int | None = Field(default=None, ge=1, le=64)
 
     # LLM chain. A hosted deployment is used only when its key variable is present.
     groq_fast_model: str = "groq/openai/gpt-oss-20b"

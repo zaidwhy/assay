@@ -52,7 +52,8 @@ def create_app(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         store = Store(settings.db_path)
         active_retriever = retriever or HybridRetriever(
-            FastembedEmbedder(settings.embed_model), FastembedReranker(settings.rerank_model),
+            FastembedEmbedder(settings.embed_model, settings.model_threads),
+            FastembedReranker(settings.rerank_model, settings.model_threads),
             rrf_k=settings.rrf_k, fuse_top=settings.fuse_top, rerank_top=settings.rerank_top,
             dense_pool=settings.dense_pool, model_input_chars=settings.model_input_chars,
             min_source_rerank=settings.min_source_rerank,
