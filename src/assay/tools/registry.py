@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from assay.settings import Settings
 from assay.tools import Tool
 from assay.tools.arxiv import make_arxiv_tool
@@ -12,7 +14,8 @@ from assay.tools.wikipedia import make_wikipedia_tool
 
 def default_tools(settings: Settings) -> dict[str, Tool]:
     tools = [
-        make_web_search_tool(settings.search_backend),
+        make_web_search_tool(settings.search_backend, tavily_api_key=os.environ.get("TAVILY_API_KEY") or None,
+                             timeout_s=settings.tool_timeout_s, max_page_chars=settings.max_fetch_bytes),
         make_wikipedia_tool(timeout_s=settings.tool_timeout_s),
         make_arxiv_tool(timeout_s=settings.tool_timeout_s),
         make_fetch_tool(max_bytes=settings.max_fetch_bytes, timeout_s=settings.fetch_timeout_s),
