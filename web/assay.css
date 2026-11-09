@@ -75,6 +75,7 @@ button, input, select, textarea { font:inherit; color:inherit; }
 .meter .track i { flex:1; height:7px; border-radius:2px; background:var(--rule); transition:background .3s; }
 .meter .track i.s { background:var(--ok); }
 .meter .track i.x { background:var(--bad); }
+.meter .track i.u { background:var(--warn); }
 
 .claimsHead { display:flex; align-items:baseline; justify-content:space-between; margin-top:22px; }
 .claimsHead h3 { font-size:13px; font-weight:600; }
@@ -119,6 +120,7 @@ button, input, select, textarea { font:inherit; color:inherit; }
 .quote .check b { font-weight:500; margin-right:6px; }
 .quote .check b.s { color:var(--ok); }
 .quote .check b.x { color:var(--bad); }
+.quote .check b.u { color:var(--warn); }
 .quote a { color:var(--brand); font-size:12px; }
 .quote + .quote { margin-top:8px; }
 .sources { display:flex; flex-direction:column; gap:8px; }

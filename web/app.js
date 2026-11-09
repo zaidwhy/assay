@@ -271,12 +271,16 @@ function explainStrike(v) {
 function paintMeter() {
   const claims = [...run.claims.values()];
   const held = claims.filter(c => c.verdict && !c.verdict.struck).length;
-  const checked = claims.filter(c => c.verdict).length;
-  $('heldCount').textContent = `${held} of ${claims.length}`;
+  const arrived = claims.filter(c => c.verdict).length;
+  // A claim the Critic never saw is neither held nor removed; the abstention share leaves it out too.
+  const unchecked = claims.filter(c => c.verdict?.checked === false).length;
+  const removed = arrived - held - unchecked;
+  $('heldCount').textContent = `${held} of ${claims.length - unchecked}`;
   $('heldOf').textContent = 'held';
-  $('track').replaceChildren(...claims.map(c => node('i', !c.verdict ? '' : c.verdict.struck ? 'x' : 's')));
-  $('claimsNote').textContent = checked < claims.length ? `${claims.length - checked} still being checked`
-    : `${held} verified, ${claims.length - held} removed`;
+  $('track').replaceChildren(...claims.map(c => node('i', !c.verdict ? '' : c.verdict.checked === false ? 'u'
+    : c.verdict.struck ? 'x' : 's')));
+  $('claimsNote').textContent = arrived < claims.length ? `${claims.length - arrived} still being checked`
+    : `${held} verified, ${removed} removed` + (unchecked ? `, ${unchecked} not checked` : '');
 }
 
 function paintReport(report) {
@@ -417,8 +421,12 @@ function sourceLink(sourceId) {
 
 function verdictLine(v) {
   const line = node('div', 'check');
-  const label = !v.struck ? 'Found in the cited passage.' : v.span_found ? 'Found, but the Critic judged it does not support the claim.' : 'Not found in any cited passage.';
-  line.append(node('b', v.struck ? 'x' : 's', v.struck ? 'Removed' : 'Verified'), label);
+  const unchecked = v.checked === false;
+  // Only a quote the model offered can be "not found"; every other strike is explained by its reason.
+  const label = !v.struck ? 'Found in the cited passage.'
+    : unchecked ? '' : v.span_found ? 'Found, but the Critic judged it does not support the claim.'
+    : v.verdict === 'supported' ? 'The quoted words are not in any cited passage.' : '';
+  line.append(node('b', unchecked ? 'u' : v.struck ? 'x' : 's', unchecked ? 'Not checked' : v.struck ? 'Removed' : 'Verified'), label);
   if (v.reason) line.append(node('div', null, v.reason));
   return line;
 }
