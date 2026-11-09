@@ -70,3 +70,15 @@ def test_passage_for_points_at_the_sentence_the_quote_came_from() -> None:
     assert "50 percent less energy" in passage["match"]
     assert passage["before"].endswith("large municipal cost.")
     assert passage_for("", [chunk]) is None
+
+
+class RateLimitError(Exception):
+    """Stands in for litellm's rate-limit error; only the class name is read."""
+
+
+async def test_a_claim_the_model_never_saw_is_not_checked_rather_than_invalid(settings: Settings) -> None:
+    llm = ScriptedLLM(failures={"critic": RateLimitError("429 tokens per day")})
+    request = CriticInput(claim_id="k1", claim="Canberra is the capital city of Australia.", chunks=[CHUNK])
+    verdict = await judge(make_ctx(settings, llm), request, timeout_s=5)
+    assert verdict.struck and not verdict.checked
+    assert verdict.reason.startswith("not checked: model capacity ran out")

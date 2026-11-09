@@ -233,3 +233,28 @@ async def test_rate_limited_analyst_abstains_and_says_capacity_ran_out(settings:
         report = (await client.get(f"/runs/{run_id}")).json()["report"]
     assert "Model capacity ran out" in report["abstain_reason"]
     assert "says nothing about the evidence" in report["abstain_reason"]
+
+
+async def test_unchecked_claims_do_not_count_against_the_abstention_share(settings: Settings) -> None:
+    # One claim checked and supported, the critic out of capacity for the others: the run answers
+    # from the one it verified instead of abstaining over claims nobody judged.
+    llm = ScriptedLLM(claims=list(GOOD_CLAIMS[:3]))
+    original = llm.complete
+    critic_calls = 0
+
+    async def complete(tier, messages, **kwargs):  # noqa: ANN001, ANN202
+        nonlocal critic_calls
+        if "ROLE: critic" in messages[0]["content"]:
+            critic_calls += 1
+            if critic_calls > 1:
+                raise RateLimitError("429 tokens per minute")
+        return await original(tier, messages, **kwargs)
+
+    llm.complete = complete
+    async with running_app(settings, llm=llm) as (client, app):
+        run_id = (await client.post("/research", json={"question": QUESTION})).json()["run_id"]
+        assert await wait_for_state(app, run_id, TERMINAL) == RunState.done
+        await app.state.orchestrator.wait(run_id)
+        report = (await client.get(f"/runs/{run_id}")).json()["report"]
+    assert len(report["key_findings"]) == 1
+    assert sum(1 for c in report["struck_claims"] if not c["checked"]) == 2

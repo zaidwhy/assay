@@ -249,9 +249,11 @@ function sourceIdsOf(claim) {
 function paintClaim(claim) {
   const v = claim.verdict;
   const state = !v ? 'checking' : v.struck ? 'x' : 's';
+  const unchecked = v?.struck && v.checked === false;
   claim.row.className = 'claim' + (state === 'x' ? ' x' : '') + (run.selected === claim.id ? ' sel' : '');
-  const word = !v ? 'Checking' : !v.struck ? 'Verified' : v.verdict === 'partial' ? 'Removed: partial' : 'Removed';
-  const badge = node('span', 'badge ' + state, word);
+  const word = !v ? 'Checking' : !v.struck ? 'Verified' : unchecked ? 'Not checked'
+    : v.verdict === 'partial' ? 'Removed: partial' : 'Removed';
+  const badge = node('span', 'badge ' + (unchecked ? 'u' : state), word);
   const text = node('div');
   text.append(node('span', 't', claim.text));
   if (v?.struck) text.append(node('span', 'why', explainStrike(v)));

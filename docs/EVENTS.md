@@ -121,6 +121,9 @@ The Critic's verdict on one claim. `verdict` is the model's call (`supported`, `
 true. `reason` explains a strike, for example `quoted span does not occur in the cited passage` or
 `not checked before the critique deadline`.
 
+`checked` is false when no judgment happened (the critique deadline passed, or the model was out of
+capacity); such a claim is struck but does not count toward the abstention share.
+
 `passage` is the sentence in the cited chunks that best matches `quote` (`match`), with up to 260
 characters of context on each side (`before`, `after`) and the `chunk_id` it came from, so a reader
 can see the words the verdict rests on. It is `null` when there is no quote or no sentence shares a

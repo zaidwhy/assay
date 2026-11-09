@@ -75,9 +75,9 @@ def quote_in_chunk(quote: str, chunk_text: str, threshold: float) -> bool:
     return best / width >= threshold
 
 
-def _struck(claim_id: str, text: str, chunk_ids: list[str], reason: str) -> ClaimVerdict:
+def _struck(claim_id: str, text: str, chunk_ids: list[str], reason: str, *, checked: bool = True) -> ClaimVerdict:
     return ClaimVerdict(claim_id=claim_id, text=text, chunk_ids=chunk_ids, verdict="unsupported", quote="",
-                        reason=reason, span_found=False, struck=True)
+                        reason=reason, span_found=False, struck=True, checked=checked)
 
 
 async def judge(ctx: RunContext, request: CriticInput, *, timeout_s: float) -> ClaimVerdict:
@@ -94,16 +94,21 @@ async def judge(ctx: RunContext, request: CriticInput, *, timeout_s: float) -> C
              {"role": "user", "content": f"Claim: {request.claim}\n\nCited passages:\n{passages}"}],
             json_mode=True, timeout_s=timeout_s,
         )
-        judged = CriticOutput.model_validate(parse_json_object(reply.text))
     except TimeoutError:
-        return _struck(request.claim_id, request.claim, chunk_ids, "not checked before the critique deadline")
+        return _struck(request.claim_id, request.claim, chunk_ids, "not checked before the critique deadline",
+                       checked=False)
+    except Exception as exc:
+        # Kept apart from reply parsing: litellm's rate-limit errors subclass ValueError, and a claim the
+        # model never saw must read "not checked", not "invalid verdict". It must not take down the run.
+        log.warning("critic call for %s in run %s failed: %s", request.claim_id, ctx.run_id, exc)
+        reason = ("not checked: model capacity ran out (rate limit)" if "RateLimit" in type(exc).__name__
+                  else f"not checked: critic call failed ({type(exc).__name__})")
+        return _struck(request.claim_id, request.claim, chunk_ids, reason, checked=False)
+    try:
+        judged = CriticOutput.model_validate(parse_json_object(reply.text))
     except (ValueError, ValidationError) as exc:
         log.info("critic reply for %s in run %s unusable: %s", request.claim_id, ctx.run_id, exc)
         return _struck(request.claim_id, request.claim, chunk_ids, "critic reply was not a valid verdict")
-    except Exception as exc:
-        # A provider outage after every fallback strikes this claim; it must not take down the run.
-        log.warning("critic call for %s in run %s failed: %s", request.claim_id, ctx.run_id, exc)
-        return _struck(request.claim_id, request.claim, chunk_ids, f"critic call failed ({type(exc).__name__})")
     span_found = any(
         quote_in_chunk(judged.quote, c.text, ctx.settings.span_overlap_threshold) for c in request.chunks
     )
@@ -145,7 +150,7 @@ def passage_for(quote: str, chunks: list[Chunk]) -> dict | None:
 def _emit_verdict(ctx: RunContext, verdict: ClaimVerdict, chunks: list[Chunk] | None = None) -> None:
     ctx.emit("claim.verdict", {"id": verdict.claim_id, "verdict": verdict.verdict, "quote": verdict.quote,
                                "reason": verdict.reason, "span_found": verdict.span_found,
-                               "struck": verdict.struck,
+                               "struck": verdict.struck, "checked": verdict.checked,
                                "passage": passage_for(verdict.quote, chunks or []) if verdict.quote else None})
 
 
@@ -170,7 +175,7 @@ async def judge_all(ctx: RunContext, requests: list[CriticInput], *, budget_s: f
             log.error("critic failed on %s in run %s", request.claim_id, ctx.run_id, exc_info=task.exception())
         task.cancel()
         verdict = _struck(request.claim_id, request.claim, [c.id for c in request.chunks],
-                          "not checked before the critique deadline")
+                          "not checked before the critique deadline", checked=False)
         _emit_verdict(ctx, verdict)
         verdicts.append(verdict)
     return verdicts

@@ -258,7 +258,10 @@ class Orchestrator:
         reliability = critic.source_reliability(ctx.sources, ctx.chunks, verdicts)
 
         supported = sum(1 for v in verdicts if not v.struck)
-        ratio = supported / len(verdicts) if verdicts else 0.0
+        # The share counts judged claims only: an unchecked claim stays out of the report but says
+        # nothing about whether the draft was right.
+        judged = [v for v in verdicts if v.checked]
+        ratio = supported / len(judged) if judged else 0.0
         abstain = supported < self.settings.min_supported_claims or ratio < self.settings.min_supported_ratio
         impact = hitl.classify(request.question, request.impact, draft.high_impact, draft.impact_reason)
         return state, Assessment(verdicts=verdicts, reliability=reliability, abstain=abstain, impact=impact,

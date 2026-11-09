@@ -71,6 +71,10 @@ def _why_abstained(ctx: RunContext, verdicts: list[ClaimVerdict]) -> str:
     if not verdicts:
         return "The sources found do not state anything that bears on this question."
     supported = sum(1 for v in verdicts if not v.struck)
+    unchecked = sum(1 for v in verdicts if not v.checked)
+    if supported == 0 and unchecked == len(verdicts):
+        return ("Model capacity ran out before the claims could be checked (the provider's rate limit), so "
+                "nothing was verified and no decision was made. Try again in a minute.")
     return (f"Only {supported} of {len(verdicts)} claims held up against their cited passages, too few to "
             "support a decision. The removed claims and their reasons are below.")
 

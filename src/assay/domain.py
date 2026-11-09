@@ -65,6 +65,9 @@ class ClaimVerdict(BaseModel):
     reason: str
     span_found: bool
     struck: bool
+    # False when no judgment happened (deadline, provider capacity). Such a claim is still kept out
+    # of the report, but it is not evidence that the draft was wrong.
+    checked: bool = True
 
 
 class Finding(BaseModel):
