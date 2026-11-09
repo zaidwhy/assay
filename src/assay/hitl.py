@@ -15,7 +15,8 @@ Decision = Literal["approve", "reject"]
 
 HIGH_IMPACT_TERMS: dict[str, tuple[str, ...]] = {
     "medical": ("dose", "dosage", "diagnos", "symptom", "treatment", "medication", "surgery", "prescri",
-                "pregnan", "side effect", "overdose", "vaccine"),
+                "pregnan", "side effect", "overdose", "vaccine", "weight loss", "diet", "fasting",
+                "supplement", "cancer", "blood pressure"),
     "legal": ("lawsuit", "sue ", "legal advice", "contract", "liability", "custody", "visa", "immigration",
               "court", "attorney", "lawyer"),
     "financial": ("invest", "mortgage", "loan", "retirement", "stock", "crypto", "bankrupt", "tax ",

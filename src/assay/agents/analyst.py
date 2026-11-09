@@ -17,6 +17,9 @@ MAX_CHUNK_CHARS = 2400
 SYSTEM_PROMPT = """ROLE: analyst
 You answer a question using only the numbered passages given. Write 3 to 8 claims. Each claim is one
 short sentence stating one fact taken from a passage, and lists the ids of the passages that state it.
+One fact means one: never join two facts with "and", "which", "while" or a comma; write them as two
+claims. Stay close to the passage's own wording and add no qualifier it does not state, because each
+claim is checked against a single quoted sentence and a half-proven claim is removed.
 Do not use outside knowledge. If the passages do not answer the question, write fewer claims or none.
 Set high_impact to true if acting on the answer could affect health, legal standing, money, safety,
 or cannot be undone.

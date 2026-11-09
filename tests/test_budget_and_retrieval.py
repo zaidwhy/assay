@@ -43,6 +43,7 @@ def test_hybrid_rank_puts_the_matching_chunk_first(settings: Settings) -> None:
 
 def test_impact_classifier_flags_keywords_and_explicit_requests() -> None:
     assert classify("What dose of ibuprofen is safe?", None, False).high
+    assert classify("Is intermittent fasting better than calorie restriction for weight loss?", None, False).high
     assert classify("What is the capital of Australia?", "high", False).reasons == ["request set impact=high"]
     assert not classify("What is the capital of Australia?", None, False).high
     assert classify("Is this plan sound?", None, True, "affects savings").high
