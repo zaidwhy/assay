@@ -215,7 +215,7 @@ def main() -> None:
 
     settings = get_settings()
     configure_logging(settings.log_level)
-    uvicorn.run(create_app(settings), host="127.0.0.1", port=8000, log_config=None)
+    uvicorn.run(create_app(settings), host=settings.host, port=settings.port, log_config=None)
 
 
 if __name__ == "__main__":

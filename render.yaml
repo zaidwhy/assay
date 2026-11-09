@@ -1,0 +1,13 @@
+# Public demo: write endpoints stay open so reviewers can start runs from the page. Groq and Tavily
+# are free tiers without billing, so abuse ends at their rate limits; the run queue is capped too.
+services:
+  - type: web
+    name: assay
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # When set, every write endpoint requires the X-API-Key header to match.
     api_key: str | None = None
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"])
+    # Loopback by default; a container sets ASSAY_HOST=0.0.0.0 and the platform's port.
+    host: str = "127.0.0.1"
+    port: int = Field(default=8000, ge=1, le=65535)
 
     # Admission control.
     max_concurrent_runs: int = Field(default=8, ge=1, le=256)
