@@ -87,7 +87,9 @@ async def judge(ctx: RunContext, request: CriticInput, *, timeout_s: float) -> C
     passages = "\n\n".join(f"[{c.id}]\n{c.text}" for c in request.chunks)
     try:
         reply = await ctx.llm_call(
-            f"critic.{request.claim_id}", "strong",
+            # Many small parallel checks: the fast tier has its own rate limit, so the critique does
+            # not queue behind the strong model's tokens-per-minute cap; the span check guards quality.
+            f"critic.{request.claim_id}", "fast",
             [{"role": "system", "content": SYSTEM_PROMPT},
              {"role": "user", "content": f"Claim: {request.claim}\n\nCited passages:\n{passages}"}],
             json_mode=True, timeout_s=timeout_s,

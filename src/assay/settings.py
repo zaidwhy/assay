@@ -32,7 +32,10 @@ class Settings(BaseSettings):
     budget_report_s: float = 4.0
 
     # Abstention floor: abstain below this many supported claims or this supported share.
-    min_supported_claims: int = Field(default=3, ge=0)
+    # One claim proven by its exact quoted span answers a one-fact question; the share is what
+    # catches a draft that is mostly wrong. A floor of 3 abstained on 13 of 14 answerable eval
+    # questions whose answer was already in a verified claim.
+    min_supported_claims: int = Field(default=1, ge=0)
     min_supported_ratio: float = Field(default=0.6, ge=0, le=1)
     span_overlap_threshold: float = Field(default=0.6, ge=0, le=1)
 
@@ -46,6 +49,10 @@ class Settings(BaseSettings):
     # ddgs backend list ("auto" tries its enabled engines in turn). Keyless engines throttle by IP.
     search_backend: str = "auto"
     pages_to_fetch: int = Field(default=4, ge=0, le=20)
+    # Research stops early once this many sources are in and this many seconds have passed:
+    # a hung search otherwise holds the stage to its full budget for evidence it no longer needs.
+    research_enough_sources: int = Field(default=6, ge=1, le=100)
+    research_settle_s: float = Field(default=5.0, ge=0)
 
     # Chunking and retrieval.
     chunk_tokens: int = Field(default=350, ge=50, le=4000)

@@ -135,6 +135,7 @@ async def gather(ctx: RunContext, research_plan: ResearchPlan, *, budget_s: floa
     """
     loop = asyncio.get_running_loop()
     stop_at = loop.time() + budget_s
+    settle_at = loop.time() + min(ctx.settings.research_settle_s, budget_s)
     ctx.scratchpad.sub_queries_tried.extend(research_plan.sub_queries)
     tool_timeout = min(ctx.settings.tool_timeout_s, budget_s)
     pending: dict[asyncio.Task[list[SourceDoc]], SourceDoc | None] = {
@@ -168,7 +169,8 @@ async def gather(ctx: RunContext, research_plan: ResearchPlan, *, budget_s: floa
             pending[task] = hit
 
     while pending and len(ctx.sources) < ctx.settings.max_sources_per_run:
-        done, _ = await asyncio.wait(pending, timeout=max(0.0, stop_at - loop.time()),
+        horizon = settle_at if len(ctx.sources) >= ctx.settings.research_enough_sources else stop_at
+        done, _ = await asyncio.wait(pending, timeout=max(0.0, horizon - loop.time()),
                                      return_when=asyncio.FIRST_COMPLETED)
         if not done:
             break

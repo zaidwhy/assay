@@ -18,6 +18,7 @@ from typing import Any, Literal, Protocol
 
 import litellm
 from litellm import Router
+from litellm.router import RetryPolicy
 from litellm.integrations.custom_logger import CustomLogger
 from pydantic import BaseModel, Field
 
@@ -164,6 +165,9 @@ class RouterLLM:
             model_list=model_list,
             fallbacks=fallbacks,
             num_retries=settings.llm_num_retries,
+            # A 429 or a timeout will not clear inside a 30 s run, so those go straight to the next
+            # provider; retrying the same one spent 7 s of the critique budget on Groq's TPM limit.
+            retry_policy=RetryPolicy(RateLimitErrorRetries=0, TimeoutErrorRetries=0),
             retry_after=0,
             allowed_fails=1,
             cooldown_time=settings.llm_cooldown_s,

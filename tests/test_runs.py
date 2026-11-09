@@ -47,6 +47,28 @@ async def test_abstains_when_supported_claims_fall_under_the_floor(settings: Set
     assert "reporter" not in llm.calls
 
 
+async def test_one_proven_claim_answers_a_one_fact_question(settings: Settings) -> None:
+    llm = ScriptedLLM(claims=[GOOD_CLAIMS[0]])
+    async with running_app(settings, llm=llm) as (client, app):
+        run_id = (await client.post("/research", json={"question": QUESTION})).json()["run_id"]
+        assert await wait_for_state(app, run_id, TERMINAL) == RunState.done
+        await app.state.orchestrator.wait(run_id)
+        report = (await client.get(f"/runs/{run_id}")).json()["report"]
+    assert report["abstained"] is False
+    assert [f["text"] for f in report["key_findings"]] == [GOOD_CLAIMS[0][0]]
+
+
+async def test_abstains_when_no_claim_survives(settings: Settings) -> None:
+    llm = ScriptedLLM(claims=[(GOOD_CLAIMS[0][0], "a sentence that appears in no passage at all")])
+    async with running_app(settings, llm=llm) as (client, app):
+        run_id = (await client.post("/research", json={"question": QUESTION})).json()["run_id"]
+        assert await wait_for_state(app, run_id, TERMINAL) == RunState.abstained
+        await app.state.orchestrator.wait(run_id)
+        report = (await client.get(f"/runs/{run_id}")).json()["report"]
+    assert report["verdict"] == "insufficient evidence"
+    assert len(report["struck_claims"]) == 1
+
+
 async def test_deadline_expiry_mid_research_still_reports_from_what_arrived(settings: Settings) -> None:
     # The wikipedia tool never returns; research must stop at its budget and use the web result.
     async with running_app(settings, tools=canberra_tools(hang_wikipedia=True)) as (client, app):
@@ -60,6 +82,18 @@ async def test_deadline_expiry_mid_research_still_reports_from_what_arrived(sett
     wiki_spans = [s for s in trace if s["name"] == "tool.wikipedia"]
     assert wiki_spans and wiki_spans[0]["status"] == "cancelled"
     assert run["latency_ms"] < 3_000 + 500
+
+
+async def test_research_stops_early_once_enough_sources_are_in(settings: Settings) -> None:
+    # A hung tool must not hold research to its full budget when the evidence is already in hand.
+    eager = settings.model_copy(update={"research_enough_sources": 1, "research_settle_s": 0.5})
+    async with running_app(eager, tools=canberra_tools(hang_wikipedia=True)) as (client, app):
+        run_id = (await client.post("/research", json={"question": QUESTION, "max_seconds": 20})).json()["run_id"]
+        assert await wait_for_state(app, run_id, TERMINAL) == RunState.done
+        await app.state.orchestrator.wait(run_id)
+        trace = (await client.get(f"/runs/{run_id}/trace")).json()["spans"]
+    research = next(s for s in trace if s["name"] == "stage.researching")
+    assert research["latency_ms"] < 2_000
 
 
 async def test_high_impact_run_waits_for_approval_then_reports(settings: Settings) -> None:

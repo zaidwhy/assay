@@ -10,7 +10,7 @@ that was checked against the exact passage it cites.
   supported with a quote that is not in the chunk is struck.
 - **Struck claims are output, not a hidden filter.** The report lists every struck claim with the
   verdict and the reason, so the reader sees what the system refused to say.
-- **Below a floor, it abstains.** With fewer than 3 supported claims, or under 60 percent of claims
+- **Below a floor, it abstains.** With no supported claim, or under 60 percent of claims
   supported, the verdict is "insufficient evidence" instead of a decision.
 
 ## Quickstart
@@ -126,7 +126,7 @@ model toward internal URLs.
   `fallback_used`, and the number of failed attempts before it.
 - **Critique is parallel and bounded.** Claims not judged before the critique budget ends are
   struck with the reason `not checked before the critique deadline`, not silently dropped.
-- **Abstention.** Fewer than 3 supported claims, or under 60 percent supported, gives "insufficient
+- **Abstention.** No supported claim, or under 60 percent supported, gives "insufficient
   evidence". Partial verdicts count as struck.
 - **Approval gate.** A run is high impact when the request says `impact: "high"`, the question hits
   the medical, legal, financial, safety or irreversible keyword list, or the Analyst flags it. It

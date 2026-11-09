@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import secrets
+from pathlib import Path as FilePath
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -13,6 +14,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Path, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from assay.domain import TERMINAL_STATES, RunState
 from assay.events import EventBus
@@ -32,6 +34,7 @@ log = logging.getLogger(__name__)
 RunId = Annotated[str, Path(pattern=r"^[0-9a-f]{12}$")]
 SSE_KEEPALIVE_S = 15.0
 UPLOAD_READ_BYTES = 1024 * 1024
+WEB_DIR = FilePath(__file__).resolve().parents[2] / "web"
 
 
 def create_app(
@@ -201,6 +204,9 @@ def create_app(
     async def prometheus_metrics() -> Response:
         return Response(content=metrics.render(), media_type="text/plain; version=0.0.4")
 
+    # Mounted last so every API route above wins over a same-named file.
+    if WEB_DIR.is_dir():
+        app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
     return app
 
 

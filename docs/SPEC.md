@@ -6,7 +6,7 @@ Done means: `POST /research` with a question returns, within 30 s, a decision re
 
 1. **Data shape.** A run is a tree: question -> sub-queries -> sources -> chunks -> claims -> verdicts. Chunks live for the run (and in session memory for later runs in the same session); verdicts are permanent and auditable.
 2. **How it fails in production.** (a) The model writes a fluent sentence the evidence does not say, and a citation marker makes it look checked. (b) A provider rate-limits or a tool hangs, and the 30 s budget is spent waiting.
-3. **The opinion.** A claim is only as good as the span that proves it. The Critic checks each claim against the exact cited chunk, not against "the context". Struck claims are a first-class output, not a hidden filter: the reader sees what the system refused to say and why. Below a supported-claim floor (default 3 supported claims, or under 60 percent of claims supported), the system abstains.
+3. **The opinion.** A claim is only as good as the span that proves it. The Critic checks each claim against the exact cited chunk, not against "the context". Struck claims are a first-class output, not a hidden filter: the reader sees what the system refused to say and why. Below a supported-claim floor (default: no supported claim, or under 60 percent of claims supported; an earlier floor of 3 made one-fact questions abstain), the system abstains.
 
 ## Agents (each a small module with one job, one prompt, typed I/O via pydantic)
 
