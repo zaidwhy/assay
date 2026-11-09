@@ -7,3 +7,12 @@ __pycache__/
 *.db-shm
 .env
 eval/eval.db*
+
+# walkthrough film: renders, frames, recordings and the browser profile stay local
+video/out/
+video/narration/
+video/frames/
+video/segs/
+video/work/
+video/profile/
+video/__pycache__/
