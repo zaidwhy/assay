@@ -283,8 +283,11 @@ function paintReport(report) {
   $('verdict').className = '';
   $('verdict').textContent = report.abstained ? 'Insufficient evidence to decide.' : report.verdict;
   $('recommendation').textContent = report.abstained
-    ? 'Too few claims survived the check to support a decision, so assay declines to make one. The removed claims and their reasons are below.'
+    ? report.abstain_reason || 'Too few claims survived the check to support a decision, so assay declines to make one. The removed claims and their reasons are below.'
     : report.recommendation?.text || '';
+  if (!report.abstained && report.verdict_check === 'passed') {
+    $('recommendation').append(node('span', 'checked', 'Conclusion checked against the verified claims.'));
+  }
   const extras = $('extras');
   extras.replaceChildren();
   const list = (title, items) => {

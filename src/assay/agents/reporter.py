@@ -28,6 +28,35 @@ Return JSON only:
  "risks": [{"text": "...", "findings": [2]}],
  "open_questions": ["what the findings leave unanswered"]}"""
 
+CHECK_PROMPT = """ROLE: conclusion check
+You are given a question, a proposed one-sentence answer, and verified findings. Decide whether the
+answer follows from the findings alone. It does not follow if it names a person, place, thing, number
+or date the findings do not state, treats one thing as another (for example a real place as a legendary
+one), or answers a different question than the one asked. Return JSON only:
+{"follows": true, "reason": "one short sentence"}"""
+
+
+class CheckOutput(BaseModel):
+    follows: bool
+    reason: str = Field(default="", max_length=400)
+
+
+async def check_verdict(ctx: RunContext, verdict: str, findings: list[Finding], timeout_s: float) -> CheckOutput | None:
+    """Each finding was proven against its passage; this proves the sentence built from them.
+    None means the check could not run, which leaves the verdict standing but marked unchecked."""
+    try:
+        reply = await ctx.llm_call(
+            "reporter.check", "fast",
+            [{"role": "system", "content": CHECK_PROMPT},
+             {"role": "user", "content": f"Question: {ctx.question}\n\nProposed answer: {verdict}\n\nVerified findings:\n"
+              + "\n".join(f"{f.n}. {f.text}" for f in findings)}],
+            json_mode=True, timeout_s=timeout_s,
+        )
+        return CheckOutput.model_validate(parse_json_object(reply.text))
+    except Exception as exc:
+        log.info("conclusion check in run %s did not run: %s", ctx.run_id, type(exc).__name__)
+        return None
+
 
 class ReporterInput(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
@@ -116,6 +145,7 @@ async def compose(
 
     verdict_text, verdict_citations = INSUFFICIENT, []
     recommendation, risks, open_questions = None, [], []
+    verdict_check, abstain_reason = "skipped", ""
     if abstained:
         open_questions = [f"Which sources would settle: {ctx.question}"]
     elif findings:
@@ -135,6 +165,14 @@ async def compose(
             recommendation = _cited_line(written.recommendation, written.recommendation_findings, findings)
             risks = [line for r in written.risks if (line := _cited_line(r.text, r.findings, findings))]
             open_questions = [q.strip() for q in written.open_questions if q.strip()]
+            if verdict_line:
+                checked = await check_verdict(ctx, verdict_text, findings, timeout_s)
+                if checked is not None and not checked.follows:
+                    verdict_check, abstained = "failed", True
+                    abstain_reason = "The verified findings do not answer the question as asked: " + checked.reason
+                    verdict_text, verdict_citations, recommendation, risks = INSUFFICIENT, [], None, []
+                elif checked is not None:
+                    verdict_check = "passed"
         except TimeoutError:
             ctx.scratchpad.notes.append("report writer ran out of budget; findings shown without a written verdict")
         except (ValueError, ValidationError) as exc:
@@ -157,6 +195,8 @@ async def compose(
         struck_claims=struck,
         bibliography=bibliography,
         reused_prior_findings=reused,
+        verdict_check=verdict_check,
+        abstain_reason=abstain_reason,
     )
     report.markdown = render_markdown(report)
     return report

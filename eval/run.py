@@ -4,7 +4,8 @@ Usage: uv run python -m eval.run [--max-seconds 30] [--limit N] [--ids a01,u02]
 
 An answerable item counts as correct when the run does not abstain and a known answer appears in
 the verdict or a surviving finding. An unanswerable or false-premise item counts as correct when
-the run abstains. Results go to stdout and eval/results.json.
+the run abstains, or when its verdict rejects the premise in one of the item's labelled refutation
+phrases ("Venus has no natural satellites"); the phrases were labelled before the run they score. Results go to stdout and eval/results.json.
 """
 
 from __future__ import annotations
@@ -36,6 +37,7 @@ class LabelledQuestion(BaseModel):
     question: str = Field(min_length=8, max_length=1000)
     answerable: bool
     answers: list[str]
+    refutations: list[str] = Field(default_factory=list)
 
 
 def load_questions(path: Path) -> list[LabelledQuestion]:
@@ -48,7 +50,9 @@ def judge_item(item: LabelledQuestion, run: dict[str, Any]) -> dict[str, Any]:
     abstained = run["state"] != "done"
     answer_text = " ".join([report.get("verdict", ""), *(f["text"] for f in report.get("key_findings", []))]).lower()
     found = any(answer.lower() in answer_text for answer in item.answers)
-    correct = (not abstained and found) if item.answerable else abstained
+    refuted = not item.answerable and not abstained and any(
+        phrase.lower() in report.get("verdict", "").lower() for phrase in item.refutations)
+    correct = (not abstained and found) if item.answerable else (abstained or refuted)
     evaluation = run.get("evaluation") or {}
     return {
         "id": item.id,
@@ -56,6 +60,7 @@ def judge_item(item: LabelledQuestion, run: dict[str, Any]) -> dict[str, Any]:
         "state": run["state"],
         "abstained": abstained,
         "answer_found": found,
+        "refuted_premise": refuted,
         "correct": correct,
         "latency_ms": run.get("latency_ms"),
         "claims_total": evaluation.get("claims_total", 0),
@@ -88,6 +93,9 @@ def summarize(items: list[dict[str, Any]]) -> dict[str, Any]:
         "unanswerable_with_supported_claims": sum(
             1 for i in items if not i["answerable"] and i["claims_supported"]
         ),
+        # An unanswerable item is handled when the run abstains or its verdict rejects the premise.
+        "unanswerable_handled": _share([i["correct"] for i in items if not i["answerable"]]),
+        "unanswerable_refuted": sum(1 for i in items if i.get("refuted_premise")),
         "abstention_precision": round(len(true_abstentions) / len(abstained), 4) if abstained else None,
         "abstention_recall": round(len(true_abstentions) / len(should_abstain), 4) if should_abstain else None,
         "faithfulness_mean": round(statistics.fmean(faithfulness), 4) if faithfulness else None,

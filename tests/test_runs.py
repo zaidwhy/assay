@@ -194,3 +194,27 @@ async def test_session_memory_is_reused_by_a_later_run(settings: Settings) -> No
     plan = next(f for f in planned if f["type"] == "query.planned")["data"]
     assert plan["reused_findings"] > 0
     assert any(f["type"] == "source.found" and f["data"]["origin"] == "memory" for f in planned)
+
+
+async def test_verdict_that_does_not_follow_from_findings_abstains(settings: Settings) -> None:
+    # Every finding was proven, but the sentence built from them claims more; the run must not ship it.
+    llm = ScriptedLLM(verdict_follows=False)
+    async with running_app(settings, llm=llm) as (client, app):
+        run_id = (await client.post("/research", json={"question": QUESTION})).json()["run_id"]
+        assert await wait_for_state(app, run_id, TERMINAL) == RunState.abstained
+        await app.state.orchestrator.wait(run_id)
+        report = (await client.get(f"/runs/{run_id}")).json()["report"]
+    assert report["verdict"] == "insufficient evidence"
+    assert report["verdict_check"] == "failed"
+    assert "Thera, not Atlantis" in report["abstain_reason"]
+    assert report["key_findings"], "verified findings are still shown"
+
+
+async def test_verdict_that_follows_is_marked_checked(settings: Settings) -> None:
+    async with running_app(settings) as (client, app):
+        run_id = (await client.post("/research", json={"question": QUESTION})).json()["run_id"]
+        assert await wait_for_state(app, run_id, TERMINAL) == RunState.done
+        await app.state.orchestrator.wait(run_id)
+        report = (await client.get(f"/runs/{run_id}")).json()["report"]
+    assert report["verdict_check"] == "passed"
+    assert report["verdict"] == "Canberra is the capital of Australia."

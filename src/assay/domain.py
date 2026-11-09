@@ -100,4 +100,7 @@ class Report(BaseModel):
     struck_claims: list[ClaimVerdict]
     bibliography: list[BibEntry]
     reused_prior_findings: list[str]
+    # Whether a separate check confirmed the verdict follows from the findings: passed, failed or skipped.
+    verdict_check: str = "skipped"
+    abstain_reason: str = ""
     markdown: str = ""

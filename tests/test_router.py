@@ -50,7 +50,7 @@ def test_chain_skips_providers_without_keys(settings: Settings) -> None:
     only_ollama = build_chain(settings, environ={})
     assert [d.name for d in only_ollama["strong"]] == ["strong:ollama"]
     full = build_chain(settings, environ={"GROQ_API_KEY": "x", "OPENROUTER_API_KEY": "y"})
-    assert [d.name for d in full["fast"]] == ["fast:groq", "fast:openrouter", "fast:ollama"]
+    assert [d.name for d in full["fast"]] == ["fast:groq", "fast:groq-backup", "fast:openrouter", "fast:ollama"]
     # Keys are referenced by variable name, never copied into the deployment config.
     assert full["fast"][0].litellm_params["api_key"] == "os.environ/GROQ_API_KEY"
 

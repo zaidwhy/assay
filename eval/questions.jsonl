@@ -12,9 +12,9 @@
 {"id": "a12", "question": "In which year did humans first land on the Moon?", "answerable": true, "answers": ["1969"]}
 {"id": "a13", "question": "How many bones are in the adult human skeleton?", "answerable": true, "answers": ["206"]}
 {"id": "a14", "question": "What is the official currency of Japan?", "answerable": true, "answers": ["yen"]}
-{"id": "u01", "question": "In what year did Isaac Newton receive the Turing Award?", "answerable": false, "answers": []}
-{"id": "u02", "question": "What is the name of the fifth moon of Venus?", "answerable": false, "answers": []}
-{"id": "u03", "question": "Who was the first person to walk on the surface of Mars?", "answerable": false, "answers": []}
-{"id": "u04", "question": "What was the exact population of Atlantis in 1500 BC?", "answerable": false, "answers": []}
-{"id": "u05", "question": "Which country won the 2042 FIFA World Cup final?", "answerable": false, "answers": []}
-{"id": "u06", "question": "What did Shakespeare say in his 1995 television interview?", "answerable": false, "answers": []}
+{"id": "u01", "question": "In what year did Isaac Newton receive the Turing Award?", "answerable": false, "answers": [], "refutations": ["never received", "did not receive", "was not awarded", "never won", "died in 1727", "first awarded in 1966"]}
+{"id": "u02", "question": "What is the name of the fifth moon of Venus?", "answerable": false, "answers": [], "refutations": ["no natural satellites", "no moons", "has no moon", "does not have any moons", "does not have a moon"]}
+{"id": "u03", "question": "Who was the first person to walk on the surface of Mars?", "answerable": false, "answers": [], "refutations": ["no person has", "no one has", "no human has", "has not yet", "no human has ever"]}
+{"id": "u04", "question": "What was the exact population of Atlantis in 1500 BC?", "answerable": false, "answers": [], "refutations": ["fictional", "legendary", "myth", "did not exist", "no historical evidence"]}
+{"id": "u05", "question": "Which country won the 2042 FIFA World Cup final?", "answerable": false, "answers": [], "refutations": ["has not been played", "has not yet", "not yet taken place", "will not take place until"]}
+{"id": "u06", "question": "What did Shakespeare say in his 1995 television interview?", "answerable": false, "answers": [], "refutations": ["died in 1616", "could not have", "no such interview", "did not give"]}

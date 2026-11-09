@@ -71,6 +71,8 @@ class Settings(BaseSettings):
     # LLM chain. A hosted deployment is used only when its key variable is present.
     groq_fast_model: str = "groq/openai/gpt-oss-20b"
     groq_strong_model: str = "groq/openai/gpt-oss-120b"
+    # Groq rate-limits per model, so a second Groq model is independent capacity when the first hits 429.
+    groq_backup_model: str = "groq/qwen/qwen3.8-27b"
     openrouter_fast_model: str = "openrouter/meta-llama/llama-3.1-8b-instruct"
     openrouter_strong_model: str = "openrouter/meta-llama/llama-3.3-70b-instruct"
     ollama_model: str = "ollama_chat/llama3.2:3b"

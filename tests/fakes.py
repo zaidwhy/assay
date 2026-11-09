@@ -49,6 +49,7 @@ class ScriptedLLM:
 
     claims: list[tuple[str, str]] = field(default_factory=lambda: list(GOOD_CLAIMS))
     high_impact: bool = False
+    verdict_follows: bool = True
     delays: dict[str, float] = field(default_factory=dict)
     blockers: dict[str, asyncio.Event] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
@@ -81,6 +82,9 @@ class ScriptedLLM:
                 "risks": [{"text": "Unsupported risk line", "findings": []}],
                 "open_questions": ["None"],
             }))
+        if role == "conclusion":
+            reason = "it follows" if self.verdict_follows else "the findings are about Thera, not Atlantis"
+            return self._reply(text=json.dumps({"follows": self.verdict_follows, "reason": reason}))
         if role == "grader":
             return self._reply(text=json.dumps({"grade": 5, "reason": "answers it"}))
         raise AssertionError(f"unexpected role {role}")

@@ -75,6 +75,8 @@ def build_chain(settings: Settings, environ: dict[str, str] | None = None) -> di
         # gpt-oss reasons before answering; "low" keeps that inside the stage budgets.
         ("groq", "GROQ_API_KEY", {"fast": settings.groq_fast_model, "strong": settings.groq_strong_model},
          {"reasoning_effort": "low"}),
+        ("groq-backup", "GROQ_API_KEY", {"fast": settings.groq_backup_model, "strong": settings.groq_backup_model},
+         {"reasoning_effort": "none"}),
         (
             "openrouter",
             "OPENROUTER_API_KEY",
