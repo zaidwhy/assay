@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 from urllib.parse import quote
 
@@ -30,25 +31,28 @@ def make_wikipedia_tool(*, timeout_s: float) -> Tool:
             titles = [hit["title"] for hit in search.json().get("query", {}).get("search", [])]
             if not titles:
                 return []
-            pages = await client.get(
-                API,
-                params={"action": "query", "prop": "extracts", "explaintext": 1, "exsectionformat": "wiki",
-                        "titles": "|".join(titles), "format": "json", "redirects": 1},
-            )
-            pages.raise_for_status()
+            # Full-text extracts come back for one page per request, so ask for each title separately.
+            replies = await asyncio.gather(*(
+                client.get(API, params={"action": "query", "prop": "extracts", "explaintext": 1,
+                                        "exsectionformat": "wiki", "titles": title, "format": "json",
+                                        "redirects": 1})
+                for title in titles
+            ))
         docs = []
-        for page in pages.json().get("query", {}).get("pages", {}).values():
-            text = (page.get("extract") or "")[:MAX_EXTRACT_CHARS]
-            if text.strip():
-                title = page.get("title", "")
-                docs.append(
-                    SourceDoc(
-                        url=f"https://en.wikipedia.org/wiki/{quote(title.replace(' ', '_'))}",
-                        title=title,
-                        text=text,
-                        origin="wikipedia",
+        for reply in replies:
+            reply.raise_for_status()
+            for page in reply.json().get("query", {}).get("pages", {}).values():
+                text = (page.get("extract") or "")[:MAX_EXTRACT_CHARS]
+                if text.strip():
+                    title = page.get("title", "")
+                    docs.append(
+                        SourceDoc(
+                            url=f"https://en.wikipedia.org/wiki/{quote(title.replace(' ', '_'))}",
+                            title=title,
+                            text=text,
+                            origin="wikipedia",
+                        )
                     )
-                )
         return docs
 
     return Tool(

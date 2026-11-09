@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     fetch_timeout_s: float = 8.0
     tool_timeout_s: float = 8.0
     max_sources_per_run: int = Field(default=12, ge=1, le=100)
+    # ddgs backend list ("auto" tries its enabled engines in turn). Keyless engines throttle by IP.
+    search_backend: str = "auto"
     pages_to_fetch: int = Field(default=4, ge=0, le=20)
 
     # Chunking and retrieval.
@@ -51,8 +53,8 @@ class Settings(BaseSettings):
     rrf_k: int = 60
     fuse_top: int = 40
     rerank_top: int = 12
-    dense_pool: int = Field(default=32, ge=1, le=1000)
-    model_input_chars: int = Field(default=1200, ge=100, le=20_000)
+    dense_pool: int = Field(default=24, ge=1, le=1000)
+    model_input_chars: int = Field(default=800, ge=100, le=20_000)
     embed_model: str = "BAAI/bge-small-en-v1.5"
     rerank_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
 

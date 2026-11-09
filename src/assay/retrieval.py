@@ -78,7 +78,7 @@ def reciprocal_rank_fusion(rankings: list[list[int]], k: int) -> dict[int, float
 
 class HybridRetriever:
     def __init__(self, embedder: Embedder, reranker: Reranker, *, rrf_k: int, fuse_top: int, rerank_top: int,
-                 dense_pool: int = 32, model_input_chars: int = 1200) -> None:
+                 dense_pool: int = 24, model_input_chars: int = 800) -> None:
         self.embedder = embedder
         self.reranker = reranker
         self.rrf_k = rrf_k

@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 GRADE_PROMPT = """ROLE: grader
 Grade how well the report answers the question, from 1 (irrelevant) to 5 (directly and fully answers).
-Return JSON only: {"grade": 3, "reason": "one line"}"""
+Return JSON only: {"grade": <1-5>, "reason": "<one line on what is missing or present>"}"""
 
 REPORT_SECTIONS = ("verdict", "recommendation", "key_findings", "risks", "open_questions", "bibliography")
 

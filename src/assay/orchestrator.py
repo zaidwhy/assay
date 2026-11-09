@@ -193,7 +193,7 @@ class Orchestrator:
                 )
             except Exception as exc:
                 # The plan is an optimization; searching the question itself is always a valid plan.
-                log.warning("planner failed in run %s, using the baseline plan: %s", ctx.run_id, exc)
+                log.warning("planner failed in run %s, using the baseline plan: %s %s", ctx.run_id, type(exc).__name__, exc)
                 ctx.scratchpad.notes.append(f"planner failed ({type(exc).__name__}); searched the question directly")
                 research_plan = researcher.baseline_plan(request.question)
         ctx.emit("query.planned", {
@@ -239,7 +239,7 @@ class Orchestrator:
                                                                             passages=passages),
                                                   timeout_s=ctx.deadline.stage("analyze"))
                 except Exception as exc:
-                    log.warning("analyst failed in run %s: %s", ctx.run_id, exc)
+                    log.warning("analyst failed in run %s: %s %s", ctx.run_id, type(exc).__name__, exc)
                     ctx.scratchpad.notes.append(f"analyst failed ({type(exc).__name__}); no claims drafted")
         ranked_ids = {r.chunk.id for r in ranked}
         requests = []

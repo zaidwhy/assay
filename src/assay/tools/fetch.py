@@ -56,12 +56,18 @@ async def fetch_page(url: str, *, max_bytes: int, timeout_s: float) -> SourceDoc
             final_url = str(response.url)
     html = bytes(body).decode("utf-8", errors="replace")
     if "html" in content_type or html.lstrip()[:1] == "<":
-        text = trafilatura.extract(html, include_comments=False, include_tables=True) or ""
-        metadata = trafilatura.extract_metadata(html)
-        title = (metadata.title if metadata and metadata.title else "") or final_url
+        # Extraction is CPU-bound and can take a second on a large page; keep it off the event loop.
+        text, title = await asyncio.to_thread(_extract, html)
+        title = title or final_url
     else:
         text, title = html, final_url
     return SourceDoc(url=final_url, title=title, text=text[:max_bytes], origin="web")
+
+
+def _extract(html: str) -> tuple[str, str]:
+    text = trafilatura.extract(html, include_comments=False, include_tables=True) or ""
+    metadata = trafilatura.extract_metadata(html)
+    return text, (metadata.title if metadata and metadata.title else "")
 
 
 def make_fetch_tool(*, max_bytes: int, timeout_s: float) -> Tool:

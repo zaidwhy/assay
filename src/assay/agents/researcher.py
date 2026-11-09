@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from assay.router import ToolCall, parse_json_object
 from assay.run_context import RunContext
-from assay.tools import SourceDoc
+from assay.tools import SourceDoc, domain_of
 
 log = logging.getLogger(__name__)
 
@@ -39,9 +39,22 @@ def _normalize(query: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", query.lower()))
 
 
+_STOPWORDS = frozenset(
+    "a an and are as at be by did do does for from how in is it its of on or the this to was were what when "
+    "where which who whom why will with".split()
+)
+
+
+def keyword_query(question: str) -> str:
+    """The question without question words; search engines and Wikipedia match on the content words."""
+    words = re.findall(r"[A-Za-z0-9][A-Za-z0-9'.-]*", question)
+    kept = [w for w in words if w.lower() not in _STOPWORDS]
+    return " ".join(kept or words)[:300]
+
+
 def baseline_plan(question: str) -> ResearchPlan:
     """The plan used when the model plans nothing usable or runs out of time."""
-    query = question[:300]
+    query = keyword_query(question)
     return ResearchPlan(
         sub_queries=[query],
         tool_calls=[ToolCall(name="web_search", arguments={"query": query}),
@@ -96,77 +109,73 @@ async def plan(ctx: RunContext, request: ResearcherInput, *, timeout_s: float) -
     return build_plan(request.question, proposed, set(ctx.tools))
 
 
-def _pick_pages_to_fetch(snippets: list[SourceDoc], limit: int) -> list[SourceDoc]:
-    """Top search hits, one per domain first, so fetch time buys diversity."""
-    chosen: list[SourceDoc] = []
-    domains: set[str] = set()
-    for doc in snippets:
-        domain = doc.url.split("/")[2] if doc.url.count("/") >= 2 else doc.url
-        if domain not in domains:
-            chosen.append(doc)
-            domains.add(domain)
-        if len(chosen) >= limit:
-            break
-    return chosen
-
-
 async def gather(ctx: RunContext, research_plan: ResearchPlan, *, budget_s: float) -> int:
-    """Run the plan's tool calls, then fetch the best pages, stopping when the budget ends.
+    """Run the plan's tool calls and fetch promising pages as soon as search hits arrive.
 
-    Returns the number of sources registered. Work still pending at the budget is cancelled and
-    the run continues with what arrived.
+    Stops when the budget ends; work still pending is cancelled and the run continues with what
+    arrived. Returns the number of sources registered.
     """
     loop = asyncio.get_running_loop()
     stop_at = loop.time() + budget_s
     ctx.scratchpad.sub_queries_tried.extend(research_plan.sub_queries)
     tool_timeout = min(ctx.settings.tool_timeout_s, budget_s)
-    searches = {
-        asyncio.create_task(ctx.tool_call(call.name, call.arguments, timeout_s=tool_timeout)): call
+    pending: dict[asyncio.Task[list[SourceDoc]], SourceDoc | None] = {
+        asyncio.create_task(ctx.tool_call(call.name, call.arguments, timeout_s=tool_timeout)): None
         for call in research_plan.tool_calls
     }
     snippets: list[SourceDoc] = []
-    pending = set(searches)
+    fetched_from: set[str] = set()
+    fetch_domains: set[str] = set()
+    fetches_started = 0
+
+    def start_fetches(hits: list[SourceDoc]) -> None:
+        # Hits from distinct domains first, so the fetch budget buys diversity; pages already in hand are skipped.
+        nonlocal fetches_started
+        if "fetch" not in ctx.tools:
+            return
+        for hit in hits:
+            if fetches_started >= ctx.settings.pages_to_fetch:
+                return
+            domain = domain_of(hit.url)
+            if domain in fetch_domains or hit.url in ctx.scratchpad.sources_seen:
+                continue
+            remaining = stop_at - loop.time()
+            if remaining < 0.5:
+                return
+            fetch_domains.add(domain)
+            fetches_started += 1
+            task = asyncio.create_task(
+                ctx.tool_call("fetch", {"url": hit.url}, timeout_s=min(ctx.settings.fetch_timeout_s, remaining))
+            )
+            pending[task] = hit
+
     while pending and len(ctx.sources) < ctx.settings.max_sources_per_run:
-        done, pending = await asyncio.wait(pending, timeout=max(0.0, stop_at - loop.time()),
-                                           return_when=asyncio.FIRST_COMPLETED)
+        done, _ = await asyncio.wait(pending, timeout=max(0.0, stop_at - loop.time()),
+                                     return_when=asyncio.FIRST_COMPLETED)
         if not done:
             break
         for task in done:
-            for doc in task.result():
-                if doc.snippet_only:
-                    snippets.append(doc)
-                else:
+            hit = pending.pop(task)
+            docs = task.result()
+            if hit is not None:
+                for page in docs:
+                    fetched_from.add(hit.url)
+                    ctx.add_source(page.model_copy(update={"title": hit.title or page.title}))
+                continue
+            hits = [d for d in docs if d.snippet_only]
+            snippets.extend(hits)
+            for doc in docs:
+                if not doc.snippet_only:
                     ctx.add_source(doc)
+            start_fetches(hits)
     for task in pending:
         task.cancel()
     if pending:
         ctx.scratchpad.notes.append(f"research budget ended with {len(pending)} tool calls unfinished")
-
-    room = ctx.settings.max_sources_per_run - len(ctx.sources)
-    fetch_targets = _pick_pages_to_fetch(snippets, min(ctx.settings.pages_to_fetch, max(room, 0)))
-    remaining = stop_at - loop.time()
-    if fetch_targets and remaining > 0.5 and "fetch" in ctx.tools:
-        fetch_timeout = min(ctx.settings.fetch_timeout_s, remaining)
-        fetches = {
-            asyncio.create_task(ctx.tool_call("fetch", {"url": doc.url}, timeout_s=fetch_timeout)): doc
-            for doc in fetch_targets
-        }
-        done, still_pending = await asyncio.wait(fetches, timeout=remaining)
-        for task in still_pending:
-            task.cancel()
-        fetched_urls: set[str] = set()
-        for task in done:
-            for page in task.result():
-                fetched_urls.add(fetches[task].url)
-                ctx.add_source(page.model_copy(update={"title": fetches[task].title or page.title}))
-        if still_pending:
-            ctx.scratchpad.notes.append(f"{len(still_pending)} page fetches cut off by the research budget")
-    else:
-        fetched_urls = set()
     # A search snippet is still evidence when its page could not be fetched in time.
     for doc in snippets:
         if len(ctx.sources) >= ctx.settings.max_sources_per_run:
             break
-        if doc.url not in fetched_urls:
+        if doc.url not in fetched_from:
             ctx.add_source(doc)
     return len(ctx.sources)

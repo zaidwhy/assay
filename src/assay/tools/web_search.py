@@ -12,18 +12,18 @@ from assay.tools import SourceDoc, Tool
 MAX_RESULTS = 8
 
 
-def _search(query: str, max_results: int) -> list[dict[str, Any]]:
-    return DDGS().text(query, max_results=max_results) or []
+def _search(query: str, max_results: int, backend: str) -> list[dict[str, Any]]:
+    return DDGS().text(query, max_results=max_results, backend=backend) or []
 
 
-def make_web_search_tool() -> Tool:
+def make_web_search_tool(backend: str) -> Tool:
     async def run(args: dict[str, Any]) -> list[SourceDoc]:
         query = str(args.get("query", "")).strip()
         if not 2 <= len(query) <= 300:
             raise ValueError("web_search.query must be 2-300 characters")
         max_results = min(int(args.get("max_results", 5) or 5), MAX_RESULTS)
         # ddgs is synchronous; keep it off the event loop.
-        hits = await asyncio.to_thread(_search, query, max_results)
+        hits = await asyncio.to_thread(_search, query, max_results, backend)
         return [
             SourceDoc(
                 url=hit.get("href", ""),
