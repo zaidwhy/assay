@@ -62,7 +62,9 @@ class Settings(BaseSettings):
     chunk_overlap: int = Field(default=50, ge=0, le=1000)
     rrf_k: int = 60
     fuse_top: int = 40
-    rerank_top: int = 12
+    # Passages handed to the Analyst. Twelve made a 7.6k-token request against Groq's free 8k
+    # tokens-per-minute cap per model; eight keeps a run inside it with the best evidence first.
+    rerank_top: int = 8
     dense_pool: int = Field(default=24, ge=1, le=1000)
     model_input_chars: int = Field(default=800, ge=100, le=20_000)
     # Cross-encoder logit floor for a source's best chunk. MiniLM scores on-topic passages

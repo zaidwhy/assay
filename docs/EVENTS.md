@@ -90,7 +90,7 @@ reused from earlier runs in the same session arrive as one `memory` source with 
 
 ## chunk.ranked
 
-One per chunk sent to the Analyst (top 12 after rerank), in rank order. `chunk_id` is
+One per chunk sent to the Analyst (top 8 after rerank), in rank order. `chunk_id` is
 `s{source_id}:c{n}`. `start` and `end` are character offsets into the source text, end exclusive.
 `rerank_score` is the cross-encoder logit (higher is better, unbounded); `fused_score` is the
 reciprocal rank fusion score.

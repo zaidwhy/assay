@@ -62,7 +62,7 @@ POST /research -> Admission (8 running, 32 queued) -> Orchestrator state machine
                top hits fetched as they arrive
                uploads and prior session findings join as sources; chunked with char offsets
   analyzing    BM25 + dense (bge-small) fused by RRF (k=60), top 40 reranked (MiniLM cross-encoder),
-               sources whose best chunk scores under the rerank floor dropped, top 12 to the
+               sources whose best chunk scores under the rerank floor dropped, top 8 to the
                Analyst (strong tier), which drafts claims citing chunk ids
   critiquing   Critic (strong tier) judges every claim in parallel; span check on each quote
   [awaiting_approval]  high-impact runs stop here until POST /runs/{id}/approval

@@ -23,7 +23,7 @@ Orchestration is an explicit async state machine (no agent framework): `planning
 
 - Ingest: web pages (httpx + trafilatura), Wikipedia API, arXiv API, uploaded files: PDF (pypdf), DOCX (python-docx), HTML, Markdown, TXT, CSV. Caps: 20 MB per upload, 200 pages per PDF, 2 MB text per fetched page, 8 s per fetch.
 - Long documents: structure-aware chunking (headings / paragraphs, ~350 tokens, 50 overlap), chunk ids `s{source}:c{n}`, char offsets kept so a citation can point at the exact span.
-- Hybrid search: BM25 (rank-bm25) + dense (fastembed `BAAI/bge-small-en-v1.5`, local, CPU) fused with reciprocal rank fusion (k=60); top 40 -> cross-encoder rerank (fastembed `Xenova/ms-marco-MiniLM-L-6-v2`) -> top 12 to the Analyst.
+- Hybrid search: BM25 (rank-bm25) + dense (fastembed `BAAI/bge-small-en-v1.5`, local, CPU) fused with reciprocal rank fusion (k=60); top 40 -> cross-encoder rerank (fastembed `Xenova/ms-marco-MiniLM-L-6-v2`) -> top 8 to the Analyst (12 overflowed the free tier's 8k tokens-per-minute cap).
 - Web search: `ddgs` (DuckDuckGo, keyless) as the default tool; Wikipedia and arXiv as tools; the tool registry is a list of JSON-schema function specs the Researcher calls through the model's function calling.
 
 ## Reliability
