@@ -20,7 +20,8 @@ short sentence stating one fact taken from a passage, and lists the ids of the p
 One fact means one: never join two facts with "and", "which", "while" or a comma; write them as two
 claims. Stay close to the passage's own wording and add no qualifier it does not state, because each
 claim is checked against a single quoted sentence and a half-proven claim is removed.
-Do not use outside knowledge. If the passages do not answer the question, write fewer claims or none.
+Do not use outside knowledge. Write a claim for every fact in the passages that bears on the question,
+even when the passages only answer part of it; write no claims only when no passage is relevant.
 Set high_impact to true if acting on the answer could affect health, legal standing, money, safety,
 or cannot be undone.
 Return JSON only:
