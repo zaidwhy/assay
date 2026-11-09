@@ -79,7 +79,8 @@ def build_chain(settings: Settings, environ: dict[str, str] | None = None) -> di
          {"reasoning_effort": "none"}),
         (
             "openrouter",
-            "OPENROUTER_API_KEY",
+            # A project-scoped name: a machine-wide OpenRouter key often carries another project's budget.
+            "ASSAY_OPENROUTER_API_KEY",
             {"fast": settings.openrouter_fast_model, "strong": settings.openrouter_strong_model},
             {},
         ),
@@ -107,7 +108,7 @@ def build_chain(settings: Settings, environ: dict[str, str] | None = None) -> di
     for tier in TIERS:
         if not chain[tier]:
             raise RuntimeError(
-                f"no LLM deployment available for tier {tier!r}: set GROQ_API_KEY or OPENROUTER_API_KEY, "
+                f"no LLM deployment available for tier {tier!r}: set GROQ_API_KEY or ASSAY_OPENROUTER_API_KEY, "
                 "or leave ASSAY_USE_OLLAMA=true with Ollama running"
             )
     return chain

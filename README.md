@@ -44,8 +44,9 @@ Variables are read from the process environment; no file is loaded.
 
 | Variable | Effect |
 |---|---|
-| `GROQ_API_KEY` | adds Groq (`openai/gpt-oss-20b` fast, `openai/gpt-oss-120b` strong, reasoning effort low) as first in the chain |
-| `OPENROUTER_API_KEY` | adds OpenRouter (`llama-3.1-8b-instruct`, `llama-3.3-70b-instruct`) next |
+| `GROQ_API_KEY` | adds Groq (`openai/gpt-oss-20b` fast, `openai/gpt-oss-120b` strong, reasoning effort low) first, then Groq `qwen/qwen3.8-27b` as a second deployment with its own rate limit |
+| `TAVILY_API_KEY` | web search through Tavily (page text included); without it, keyless DuckDuckGo |
+| `ASSAY_OPENROUTER_API_KEY` | optional: adds OpenRouter (`llama-3.1-8b-instruct`, `llama-3.3-70b-instruct`) after Groq. Project-scoped on purpose, so a machine-wide `OPENROUTER_API_KEY` is never spent |
 | `ASSAY_USE_OLLAMA` | `true` by default: local `llama3.2:3b` as the last resort |
 | `ASSAY_API_KEY` | when set, every write endpoint requires a matching `X-API-Key` header |
 | `ASSAY_DB_PATH` | SQLite file, default `assay.db` |
