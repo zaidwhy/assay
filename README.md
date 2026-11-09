@@ -12,6 +12,39 @@ that was checked against the exact passage it cites.
   verdict and the reason, so the reader sees what the system refused to say.
 - **Below a floor, it abstains.** With no supported claim, or under 60 percent of claims
   supported, the verdict is "insufficient evidence" instead of a decision.
+- **The conclusion is checked too.** Each finding is proven against its passage; a separate check
+  then confirms the one-sentence verdict follows from those findings without adding a place,
+  number or equivalence they do not state. A verdict that fails it is withheld, with the reason.
+
+## Live demo
+
+**https://zaidwhy--assay-web.us-east.modal.run** (Modal, one container, scales to zero: the first
+request after idle takes 15-40 s to start). Ask a question, or pick an example; click any claim to
+see the sentence in the source that proves it, and open **Trace** for every agent step, model call
+and tool call with its latency, tokens, retries and fallbacks.
+
+It runs on free tiers: Groq allows about 8,000 tokens per minute per model, so several questions at
+the same moment will see some runs decline for capacity (they say so; they do not guess). Run state
+lives in the container, so a run started just before a redeploy is lost.
+
+## What the brief asked for, and where it is
+
+| Requirement | How assay meets it | Verified |
+|---|---|---|
+| Researcher, Analyst, Critic, Report Generator agents | four modules in `src/assay/agents/`, typed I/O, an explicit state machine in `orchestrator.py` | live runs |
+| RAG with hybrid search and reranking | BM25 + dense (bge-small) fused by reciprocal rank fusion, cross-encoder rerank, top 8 to the Analyst | live runs, tests |
+| Tool calling: web search, documents, external APIs | the Researcher calls `web_search` (Tavily), `wikipedia`, `arxiv` and `fetch` through function calling; uploads join the corpus | live runs |
+| Agent memory across steps | per-run scratchpad passed agent to agent; per-session findings reused by later runs | tests |
+| Source attribution and citations | every finding cites bibliography numbers; each verdict carries the exact sentence its quote came from | live runs |
+| Automated evaluation | per-run faithfulness, citation precision, relevance (LLM grade), structure, source diversity; a labelled harness in `eval/` | live runs, harness |
+| Human approval for high-impact decisions | medical, legal, financial, safety and irreversible questions stop at `awaiting_approval` | live runs (approved in the UI) |
+| Observability | a span per agent step, model call and tool call (latency, tokens, model, fallback, retries, status), SSE stream, `GET /runs/{id}/trace`, `/metrics` | live runs |
+| Open-source LLMs | open-weight only: gpt-oss-120b, gpt-oss-20b and Qwen 3.8 27B on Groq, Llama 3.2 3B locally. Groq no longer serves Llama, so Llama is the local fallback rather than the lead | live |
+| Long documents, many formats | PDF, DOCX, HTML, Markdown, TXT, CSV; offset-keeping chunks; 20 MB / 200-page caps | live: the 77-page Llama 2 paper (13.7 MB) uploaded, then "2 trillion tokens" answered citing it |
+| Retries and fallback models | per-call fallback across three Groq models (each has its own rate limit); tools time out, retry once, and fail soft | live: rate-limited calls answered by the backup model, recorded in the trace |
+| 30 s end to end | one deadline per run with stage budgets | live: every run measured 10-28 s; harness below |
+| No unsupported claims | claim check, mechanical quote check, abstention floor, conclusion check | live, tests, harness |
+| Concurrent requests, scalable API | async FastAPI, run semaphore and queue cap, 429 with `Retry-After` | live: 5 simultaneous questions all returned in 22 s (4 declined for model capacity on the free tier) |
 
 ## Quickstart
 
@@ -121,14 +154,17 @@ model toward internal URLs.
   continues with the sources it has. A search snippet whose page could not be fetched still counts.
 - **Tools fail soft.** Each tool call has a timeout and one retry; a failure becomes a span with
   `status: error` and the run goes on.
-- **Model calls fall back.** The litellm Router runs groq -> openrouter -> ollama with a per-call
-  timeout, 2 retries, a cooldown after failures, and a per-provider concurrency limit. Hosted
-  deployments are added only when their key is set. Every LLM span records the model that answered,
-  `fallback_used`, and the number of failed attempts before it.
+- **Model calls fall back.** The litellm Router runs Groq gpt-oss -> Groq Qwen -> OpenRouter (only
+  with `ASSAY_OPENROUTER_API_KEY`) -> Ollama, with a per-call timeout, a cooldown after failures and
+  a per-provider concurrency limit. A rate limit or a timeout goes straight to the next model,
+  because it will not clear inside a 30 s run; other errors retry twice. Every LLM span records the
+  model that answered, `fallback_used`, and the number of failed attempts before it.
 - **Critique is parallel and bounded.** Claims not judged before the critique budget ends are
   struck with the reason `not checked before the critique deadline`, not silently dropped.
-- **Abstention.** No supported claim, or under 60 percent supported, gives "insufficient
-  evidence". Partial verdicts count as struck.
+- **Abstention names its cause.** No supported claim, or under 60 percent supported, gives
+  "insufficient evidence". Partial verdicts count as struck. When the Analyst call itself failed
+  (a rate limit, for example), the report says model capacity ran out instead of blaming the
+  evidence.
 - **Approval gate.** A run is high impact when the request says `impact: "high"`, the question hits
   the medical, legal, financial, safety or irreversible keyword list, or the Analyst flags it. It
   stops at `awaiting_approval` with the draft visible. The 30 s budget covers everything up to the
@@ -164,31 +200,32 @@ uv run python -m eval.run --max-seconds 60 --ids a01,u02
 It prints accuracy, abstention precision and recall, mean faithfulness and p50/p95 latency, and
 writes every item to `eval/results.json`. An answerable item is correct when the run does not abstain
 and a known answer appears in the verdict or a surviving finding; an unanswerable item is correct
-when the run abstains. Gated runs are approved automatically by the harness.
+when the run abstains or its verdict rejects the premise in one of the item's labelled phrases
+("Venus has no natural satellites"). Gated runs are approved automatically by the harness.
 
 ### Results
 
-Two harness runs on 2026-11-09, 20 questions each. In run 1, 11 of 37 web searches failed or were
-cut off by the research budget (keyless engines throttle by IP); all 23 Wikipedia calls returned.
-`eval/results.json` holds the per-item output of run 1.
+Two harness runs, 20 questions each, 30 s budget, paced so each model's per-minute quota refills.
+They are reported as they came out, including the second, which ran with the free tier's daily
+quotas nearly spent.
 
-| | Run 1 | Run 2 |
+| | Run A, 2026-11-09 22:10 IST | Run B, 2026-11-10 00:25 IST |
 |---|---|---|
-| Chain | groq `openai/gpt-oss-20b` (fast), `openai/gpt-oss-120b` (strong), Ollama `llama3.2:3b` fallback | Ollama `llama3.2:3b` only |
-| Command | `eval.run --max-seconds 30 --pause-seconds 45` | `eval.run --max-seconds 60` |
-| LLM calls answered by a fallback | 6 of 60 (Groq tokens-per-minute limit) | n/a |
-| Accuracy | 0.35 | 0.40 |
-| Answerable accuracy (14 items) | 0.0714 | 0.1429 |
-| Answer present in a verified finding (14 items) | 1.0 | not measured |
-| Abstention precision / recall | 0.3158 / 1.0 | 0.3333 / 1.0 |
-| Mean faithfulness | 1.0 | 0.3138 |
-| Latency p50 / p95 | 14.4 s / 20.0 s | 40.0 s / 53.4 s |
-| Runs within 30 s | 20 of 20 | 3 of 20 |
+| Chain | Groq `gpt-oss-20b` / `gpt-oss-120b`, OpenRouter Llama 3.x fallback | Groq `gpt-oss-20b` / `gpt-oss-120b` / `qwen3.8-27b` |
+| Code | before the conclusion check | conclusion check, Groq backup model, top 8 passages |
+| Runs within 30 s | 20 of 20 | 20 of 20 |
+| Latency p50 / p95 | 16.0 s / 19.8 s | 15.5 s / 22.5 s |
+| Answerable: answer in a verified finding | 12 of 14 | 12 of 14 |
+| Answerable: correct (answered, not abstained) | 12 of 14 | 5 of 14 |
+| Unanswerable or false premise handled | 3 of 6 (scored on abstention only) | 6 of 6 |
+| Mean faithfulness | 0.94 | 0.39 |
 
-What the numbers say. With gpt-oss on Groq, every claim that survived was verified and every run
-finished inside 30 s, and the correct answer was in a verified finding for all 14 answerable
-questions. But the Analyst wrote one or two claims for one-fact questions, so 13 of 14 fell under
-the 3-supported-claim floor and abstained; answerable accuracy measures that floor, not retrieval.
-Abstention recall of 1.0 is partly the same effect: the floor abstains on almost everything here.
-The local 3B model cannot fit the analyze stage into its budget (one Analyst call took 23 s), so it
-needs the 60 s ceiling and still strikes most of its own claims.
+What happened between them. Run A exposed the Atlantis failure: a verified finding about a Bronze
+Age city on Thera became "the population of Atlantis is about 30,000". The conclusion check that
+followed is why run B handles all 6 false-premise questions. Run B also exposed two bugs, both
+fixed after it: with the daily quota of `gpt-oss-20b` spent and Qwen over its per-minute cap, 58
+Critic calls failed for capacity, and those claims were (1) labelled "critic reply was not a valid
+verdict" and (2) counted against the 60 percent share, so runs whose answer was already verified
+abstained. Unchecked claims are now marked `checked: false`, kept out of the report, and left out of
+the share. The fixes target the gap between 12 answers found and 5 given; whether they close it
+is not measured yet, and a rerun on a fresh daily quota is the next measurement. `eval/results.json` holds run B per item.

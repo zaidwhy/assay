@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>assay - project report</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root { --ink:#1f2b24; --ink2:#2d3a32; --muted:#6b7669; --rule:#cfd6c8; --brand:#2f4a3c; --accent:#c7871a;
+  --ok:#2f6b46; --okbg:#dbe9dc; --bad:#a63a2a; --badbg:#f2dcd6; --side:#eef0ea; }
+@page { size:A4; margin:18mm 17mm 18mm 17mm; }
+* { box-sizing:border-box; }
+body { font-family:'IBM Plex Sans', sans-serif; color:var(--ink); font-size:10.2pt; line-height:1.55; margin:0; }
+h1 { font-family:'IBM Plex Serif', serif; font-weight:500; font-size:26pt; margin:0; color:var(--brand); }
+h2 { font-family:'IBM Plex Serif', serif; font-weight:500; font-size:14.5pt; margin:22px 0 6px; color:var(--brand); break-after:avoid; }
+h3 { font-size:10.5pt; margin:14px 0 4px; break-after:avoid; }
+p { margin:6px 0; }
+.kicker { font-family:'IBM Plex Mono', monospace; font-size:8pt; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.lede { font-family:'IBM Plex Serif', serif; font-size:12.5pt; line-height:1.5; color:var(--ink2); margin:14px 0 10px; }
+.meta { display:flex; gap:22px; flex-wrap:wrap; font-size:9pt; color:var(--muted); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:7px 0; margin:12px 0 4px; }
+.meta b { color:var(--ink); font-weight:500; }
+code, .mono { font-family:'IBM Plex Mono', monospace; font-size:8.6pt; }
+table { width:100%; border-collapse:collapse; margin:8px 0; font-size:9pt; break-inside:avoid; }
+th { text-align:left; font-weight:600; border-bottom:1.5px solid var(--brand); padding:5px 6px; }
+td { border-bottom:1px solid var(--rule); padding:5px 6px; vertical-align:top; }
+td.n, th.n { text-align:right; font-family:'IBM Plex Mono', monospace; }
+.box { background:var(--side); border-left:3px solid var(--brand); padding:9px 12px; margin:10px 0; break-inside:avoid; }
+.box.warn { border-left-color:var(--accent); }
+ul { margin:6px 0; padding-left:18px; } li { margin:3px 0; }
+figure { margin:12px 0; break-inside:avoid; }
+figcaption { font-size:8.5pt; color:var(--muted); margin-top:4px; }
+.pill { display:inline-block; font-size:8pt; padding:1px 6px; border-radius:4px; }
+.pill.s { background:var(--okbg); color:var(--ok); } .pill.x { background:var(--badbg); color:var(--bad); }
+.break { break-before:page; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Live project report &middot; multi-agent research system</div>
+<h1>assay</h1>
+<p class="lede">A research service that answers a question with a structured decision report in which every finding is a claim checked against the exact passage it cites, the conclusion is checked against those findings, and the system declines to decide when the evidence does not hold up.</p>
+<div class="meta">
+  <span>Author <b>Zaid Ali Syed</b></span>
+  <span>Code <b>github.com/zaidwhy/assay</b></span>
+  <span>Live demo <b>zaidwhy--assay-web.us-east.modal.run</b></span>
+  <span>Date <b>10 November 2026</b></span>
+</div>
+
+<h2>1. The problem and the position taken</h2>
+<p>A multi-agent research pipeline fails quietly in one specific way: the model writes a fluent sentence the sources do not say, and a citation marker next to it makes it look checked. Retrieval quality, agent count and latency all matter, but none of them prevents that. The design of assay starts from one rule instead:</p>
+<div class="box"><b>A claim is only as good as the span that proves it.</b> Every claim must quote the passage that supports it; the quote is checked mechanically against the cited text; claims that fail are shown as removed, with the reason, not silently dropped; and when too little survives, the report says "insufficient evidence" instead of deciding.</div>
+<p>Everything else in the system (the four agents, hybrid retrieval, fallbacks, approval, tracing) is built around making that rule hold inside a 30 second budget on open-weight models.</p>
+
+<h2>2. Architecture</h2>
+<figure>
+<svg viewBox="0 0 760 250" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans, sans-serif" font-size="11">
+  <defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2f4a3c"/></marker></defs>
+  <g fill="#fbfcf8" stroke="#2f4a3c" stroke-width="1.2">
+    <rect x="8" y="78" width="84" height="54" rx="6"/>
+    <rect x="118" y="78" width="104" height="54" rx="6"/>
+    <rect x="248" y="78" width="112" height="54" rx="6"/>
+    <rect x="386" y="78" width="96" height="54" rx="6"/>
+    <rect x="508" y="78" width="104" height="54" rx="6" stroke="#c7871a"/>
+    <rect x="638" y="78" width="114" height="54" rx="6"/>
+  </g>
+  <g text-anchor="middle" fill="#1f2b24">
+    <text x="50" y="102" font-weight="600">Question</text><text x="50" y="118" fill="#6b7669" font-size="9.5">30 s deadline</text>
+    <text x="170" y="100" font-weight="600">Researcher</text><text x="170" y="115" fill="#6b7669" font-size="9.5">plans sub-queries,</text><text x="170" y="127" fill="#6b7669" font-size="9.5">calls tools</text>
+    <text x="304" y="100" font-weight="600">Retrieval</text><text x="304" y="115" fill="#6b7669" font-size="9.5">BM25 + dense, RRF,</text><text x="304" y="127" fill="#6b7669" font-size="9.5">cross-encoder rerank</text>
+    <text x="434" y="100" font-weight="600">Analyst</text><text x="434" y="115" fill="#6b7669" font-size="9.5">one-fact claims</text><text x="434" y="127" fill="#6b7669" font-size="9.5">+ chunk ids</text>
+    <text x="560" y="100" font-weight="600">Critic</text><text x="560" y="115" fill="#6b7669" font-size="9.5">verdict + quote,</text><text x="560" y="127" fill="#6b7669" font-size="9.5">span check</text>
+    <text x="695" y="100" font-weight="600">Report Generator</text><text x="695" y="115" fill="#6b7669" font-size="9.5">verdict from held claims,</text><text x="695" y="127" fill="#6b7669" font-size="9.5">conclusion check</text>
+  </g>
+  <g stroke="#2f4a3c" stroke-width="1.2" marker-end="url(#a)"><path d="M92 105 H116"/><path d="M222 105 H246"/><path d="M360 105 H384"/><path d="M482 105 H506"/><path d="M612 105 H636"/></g>
+  <g font-size="9.5" fill="#6b7669" text-anchor="middle">
+    <rect x="118" y="20" width="104" height="38" rx="5" fill="#eef0ea" stroke="#cfd6c8"/>
+    <text x="170" y="36">web search, Wikipedia,</text><text x="170" y="49">arXiv, page fetch, uploads</text>
+    <path d="M170 58 V76" stroke="#cfd6c8" marker-end="url(#a)"/>
+    <rect x="508" y="160" width="104" height="38" rx="5" fill="#f3e6c8" stroke="#e3cf9e"/>
+    <text x="560" y="176" fill="#7a5408">approval gate for</text><text x="560" y="189" fill="#7a5408">high-impact questions</text>
+    <path d="M560 132 V158" stroke="#e3cf9e" marker-end="url(#a)"/>
+    <path d="M612 179 H695 V134" stroke="#e3cf9e" fill="none" marker-end="url(#a)"/>
+  </g>
+  <rect x="8" y="218" width="744" height="24" rx="5" fill="#eef0ea" stroke="#cfd6c8"/>
+  <text x="380" y="234" text-anchor="middle" font-size="9.5" fill="#2d3a32">every agent step, model call and tool call is a span: latency, tokens, model, fallback, retries, status; streamed live and stored per run</text>
+</svg>
+<figcaption>Figure 1. The run pipeline. Each box is a stage with its own time budget inside the run's 30 s deadline.</figcaption>
+</figure>
+<p>A run is an explicit async state machine (<span class="mono">queued, planning, researching, analyzing, critiquing, awaiting_approval, reporting</span>, then <span class="mono">done</span>, <span class="mono">abstained</span>, <span class="mono">rejected</span> or <span class="mono">failed</span>), not an agent framework, so every transition is visible and testable. The API is FastAPI: <span class="mono">POST /research</span> returns a run id at once (202), the run continues in the background, and the page follows it over a Server-Sent Events stream. The front end renders the run purely from that stream, so a reload or a shared link replays the same run.</p>
+
+<h3>The four agents</h3>
+<table>
+<tr><th>Agent</th><th>Job</th><th>Model tier</th></tr>
+<tr><td>Researcher</td><td>Turns the question into 3-5 sub-queries and calls tools through function calling: Tavily web search (page text included), Wikipedia, arXiv (only for scholarly questions), page fetch. Stops gathering early once enough sources are in.</td><td>fast</td></tr>
+<tr><td>Analyst</td><td>Reads the top 8 reranked passages and writes one-fact claims, each with the passage ids it rests on, plus options and a recommendation. One fact per claim, because each is checked against a single quoted sentence.</td><td>strong</td></tr>
+<tr><td>Critic</td><td>Judges each claim in parallel against its cited passages only and must quote the supporting span; a mechanical check confirms the quote occurs in the passage. Also scores source reliability.</td><td>fast</td></tr>
+<tr><td>Report Generator</td><td>Writes the verdict, recommendation, risks and open questions from surviving claims only, with citations; a separate conclusion check confirms the verdict follows from them.</td><td>strong, check on fast</td></tr>
+</table>
+
+<h3>Retrieval</h3>
+<p>Sources are split into structure-aware chunks (about 350 words with overlap) that keep character offsets into the source, so a citation can point at an exact span. Ranking fuses BM25 and dense embeddings (<span class="mono">BAAI/bge-small-en-v1.5</span>, local, CPU) by reciprocal rank fusion, then a cross-encoder (<span class="mono">ms-marco-MiniLM-L-6-v2</span>) reranks the top 40. Sources whose best chunk scores below a floor are dropped as off-topic. Uploaded PDF, DOCX, HTML, Markdown, TXT and CSV files join the same corpus for the session.</p>
+
+<h2>3. Preventing unsupported claims</h2>
+<p>Four checks stand between a model's sentence and the report:</p>
+<ul>
+<li><b>Claim verdict.</b> The Critic sees only the cited passages and returns supported, partial or unsupported with the quote it relies on. Partial counts as removed.</li>
+<li><b>Mechanical span check.</b> The quote must occur in a cited passage, as a normalised substring or a contiguous window sharing at least 60 percent of its tokens. A claim the model calls supported with a quote that is not there is removed with the reason "quoted span does not occur in the cited passage".</li>
+<li><b>Abstention floor.</b> If no claim survives, or fewer than 60 percent do, the verdict is "insufficient evidence". The reason is stated, and it distinguishes thin evidence from a model that ran out of capacity.</li>
+<li><b>Conclusion check.</b> Added after evaluation found that verified findings about a Bronze Age city on Thera had been turned into a population figure for Atlantis. Each finding was true; the sentence built from them was not. The verdict is now checked against the findings for added entities, numbers or equivalences, and withheld if it fails.</li>
+</ul>
+<p>Removed claims stay in the report with their reasons, so a reader sees what the system refused to say. In the interface every claim opens to the exact sentence in the source that its quote came from.</p>
+
+<h2>4. Reliability, speed and concurrency</h2>
+<ul>
+<li><b>One deadline per run</b> with stage budgets (plan 3 s, research 10 s, analyze 6 s, critique 6 s, report 4 s). Research works with what has arrived when its budget ends; unfinished tool calls are cancelled and recorded as such.</li>
+<li><b>Model fallback.</b> The chain is Groq <span class="mono">gpt-oss-120b</span> / <span class="mono">gpt-oss-20b</span>, then Groq <span class="mono">qwen3.8-27b</span>, then local Llama 3.2 3B. Groq rate-limits each model separately, so the second Groq model is real extra capacity. A rate limit or timeout goes straight to the next model instead of retrying the same one.</li>
+<li><b>Tools fail soft</b>: a timeout, one retry, a failure span, and the run continues.</li>
+<li><b>Concurrency.</b> Async throughout; a run semaphore (8) and a queue cap (32) with 429 and <span class="mono">Retry-After</span> beyond it; a per-provider slot limit so many parallel Critic calls queue instead of failing.</li>
+<li><b>Human approval.</b> Medical, legal, financial, safety and irreversible questions, or ones the Analyst flags, stop at <span class="mono">awaiting_approval</span> with the draft visible; a reviewer approves or rejects in the page.</li>
+<li><b>Observability.</b> Every agent step, LLM call and tool call is a span with latency, tokens in and out, the model that answered, whether it was a fallback, retries and status. Spans stream live, are stored per run (<span class="mono">GET /runs/{id}/trace</span>), and feed Prometheus metrics at <span class="mono">/metrics</span>.</li>
+</ul>
+
+<h2 class="break">5. Evaluation</h2>
+<p>Every run is scored automatically: faithfulness (supported over judged claims), citation precision, relevance (embedding similarity plus an LLM grade with a reason), structure completeness, source diversity and reliability-weighted evidence. Separately, a harness runs a labelled set through the real pipeline: 14 questions with short known answers and 6 unanswerable or false-premise questions ("What is the name of the fifth moon of Venus?") where the right output is to decline or to reject the premise.</p>
+<table>
+<tr><th></th><th class="n">Run A</th><th class="n">Run B</th></tr>
+<tr><td>When, and code state</td><td class="n">9 Nov 22:10, before the conclusion check</td><td class="n">10 Nov 00:25, after it</td></tr>
+<tr><td>Runs within 30 s</td><td class="n">20 / 20</td><td class="n">20 / 20</td></tr>
+<tr><td>Latency p50 / p95</td><td class="n">16.0 s / 19.8 s</td><td class="n">15.5 s / 22.5 s</td></tr>
+<tr><td>Answerable: answer in a verified finding</td><td class="n">12 / 14</td><td class="n">12 / 14</td></tr>
+<tr><td>Answerable: answered correctly</td><td class="n">12 / 14</td><td class="n">5 / 14</td></tr>
+<tr><td>Unanswerable or false premise handled</td><td class="n">3 / 6</td><td class="n">6 / 6</td></tr>
+<tr><td>Mean faithfulness</td><td class="n">0.94</td><td class="n">0.39</td></tr>
+</table>
+<p><b>Run A</b> found the Atlantis failure described in section 3; the conclusion check that followed is why run B handles all six false-premise questions. <b>Run B</b> ran with the free tier's daily quotas nearly spent after a day of testing. Fifty-eight Critic calls failed for model capacity, and two bugs turned that into abstentions: the failures were labelled as invalid verdicts, and the never-checked claims counted against the 60 percent share, so runs whose correct answer was already verified (12 of 14) declined to answer. Both are fixed: unchecked claims are marked <span class="mono">checked: false</span>, kept out of the report, and left out of the share, and the page says capacity ran out instead of blaming the evidence. Whether that closes the gap between 12 answers found and 5 given is not yet measured; a rerun on a fresh daily quota is the next measurement.</p>
+<div class="box warn">Every number here comes from a recorded run (<span class="mono">eval/results.json</span> holds run B per item). None is estimated.</div>
+
+<h2>6. Verified on the live deployment</h2>
+<table>
+<tr><th>Check</th><th>Result</th></tr>
+<tr><td>Standard research request, end to end</td><td>10-28 s across every measured run (local and deployed); 12.5 s on the deployed demo after the thread fix</td></tr>
+<tr><td>Long document, PDF</td><td>The 77-page Llama 2 paper (13.7 MB) uploaded in 16.4 s as 260,687 characters; "how many tokens were Llama 2 models pretrained on?" answered "2 trillion" in 19.8 s, citing the uploaded file</td></tr>
+<tr><td>Concurrency</td><td>5 simultaneous questions: all accepted and returned within 22 s. 4 of 5 declined because five simultaneous Analyst calls exceed the free tier's per-minute token budget; they say so instead of guessing</td></tr>
+<tr><td>Fallback</td><td>With the primary model's daily budget spent, the Analyst ran on the backup model: 8 claims verified, 2 removed, conclusion check passed, 18.5 s</td></tr>
+<tr><td>Human approval</td><td>High-impact questions (diet, city spending, platform choice) held, approved in the page, released</td></tr>
+</table>
+
+<h2>7. Limits, stated plainly</h2>
+<ul>
+<li><b>Free-tier capacity is the ceiling.</b> Groq's free tier allows about 8,000 tokens per minute and 200,000 per day per model; one run uses roughly 6,000-8,000. The API scales; the model quota does not. A paid tier or another provider removes this.</li>
+<li><b>Llama is the fallback, not the lead.</b> Groq stopped serving Llama chat models, so the hosted chain uses open-weight gpt-oss and Qwen; Llama 3.2 runs locally as the last resort.</li>
+<li><b>Single-container state.</b> Runs and the SQLite store live in the process; the demo runs one container, and a run in flight during a redeploy is lost.</li>
+<li><b>Retrieval shortcuts for speed.</b> The dense pass covers the BM25 top 24 and reads the first 800 characters of each chunk, because CPU embedding of everything did not fit the budget.</li>
+</ul>
+
+<h2>8. Engineering notes</h2>
+<p>Python 3.12, FastAPI, litellm Router, fastembed (ONNX), SQLite with WAL and a schema version, pydantic models for every agent's input and output. 50 offline tests (scripted model and in-memory tools) cover span checks, abstention, deadlines, fallback, approval, upload caps, queue limits, ingest offsets, the conclusion check, unchecked-claim handling and the evaluation scoring. Deployed on Modal from a lockfile-pinned image with the search models baked in; a Cloud Run script is included as an alternative.</p>
+
+</body>
+</html>
