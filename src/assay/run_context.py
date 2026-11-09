@@ -28,6 +28,9 @@ class Scratchpad(BaseModel):
     sub_queries_tried: list[str] = Field(default_factory=list)
     sources_seen: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    # Set when the Analyst call itself failed, so an abstention can say capacity ran out rather
+    # than blame the evidence.
+    analyst_error: str | None = None
 
 
 @dataclass

@@ -50,6 +50,7 @@ class ScriptedLLM:
     claims: list[tuple[str, str]] = field(default_factory=lambda: list(GOOD_CLAIMS))
     high_impact: bool = False
     verdict_follows: bool = True
+    failures: dict[str, Exception] = field(default_factory=dict)
     delays: dict[str, float] = field(default_factory=dict)
     blockers: dict[str, asyncio.Event] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
@@ -57,6 +58,8 @@ class ScriptedLLM:
     async def complete(self, tier, messages, *, tools=None, json_mode=False, timeout_s):  # noqa: ANN001
         role = _role(messages)
         self.calls.append(role)
+        if role in self.failures:
+            raise self.failures[role]
         if role in self.blockers:
             await self.blockers[role].wait()
         if role in self.delays:

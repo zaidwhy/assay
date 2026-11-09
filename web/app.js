@@ -281,7 +281,10 @@ function paintReport(report) {
   const decision = $('decision');
   decision.className = 'decision ' + (report.abstained ? 'abstained' : 'held');
   $('verdict').className = '';
-  $('verdict').textContent = report.abstained ? 'Insufficient evidence to decide.' : report.verdict;
+  // A failed model call is not thin evidence; the heading must not blame the sources for it.
+  const capacity = /capacity ran out|could not draft/.test(report.abstain_reason || '');
+  $('verdict').textContent = !report.abstained ? report.verdict
+    : capacity ? 'No decision this time.' : 'Insufficient evidence to decide.';
   $('recommendation').textContent = report.abstained
     ? report.abstain_reason || 'Too few claims survived the check to support a decision, so assay declines to make one. The removed claims and their reasons are below.'
     : report.recommendation?.text || '';

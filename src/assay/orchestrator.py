@@ -241,6 +241,7 @@ class Orchestrator:
                 except Exception as exc:
                     log.warning("analyst failed in run %s: %s %s", ctx.run_id, type(exc).__name__, exc)
                     ctx.scratchpad.notes.append(f"analyst failed ({type(exc).__name__}); no claims drafted")
+                    ctx.scratchpad.analyst_error = type(exc).__name__
         ranked_ids = {r.chunk.id for r in ranked}
         requests = []
         for i, claim in enumerate(draft.claims, start=1):

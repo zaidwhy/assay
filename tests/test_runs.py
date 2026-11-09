@@ -218,3 +218,18 @@ async def test_verdict_that_follows_is_marked_checked(settings: Settings) -> Non
         report = (await client.get(f"/runs/{run_id}")).json()["report"]
     assert report["verdict_check"] == "passed"
     assert report["verdict"] == "Canberra is the capital of Australia."
+
+
+class RateLimitError(Exception):
+    """Stands in for the provider's rate-limit error; the report reads only the class name."""
+
+
+async def test_rate_limited_analyst_abstains_and_says_capacity_ran_out(settings: Settings) -> None:
+    llm = ScriptedLLM(failures={"analyst": RateLimitError("429 tokens per minute")})
+    async with running_app(settings, llm=llm) as (client, app):
+        run_id = (await client.post("/research", json={"question": QUESTION})).json()["run_id"]
+        assert await wait_for_state(app, run_id, TERMINAL) == RunState.abstained
+        await app.state.orchestrator.wait(run_id)
+        report = (await client.get(f"/runs/{run_id}")).json()["report"]
+    assert "Model capacity ran out" in report["abstain_reason"]
+    assert "says nothing about the evidence" in report["abstain_reason"]

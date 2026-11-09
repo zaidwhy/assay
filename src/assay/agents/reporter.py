@@ -58,6 +58,23 @@ async def check_verdict(ctx: RunContext, verdict: str, findings: list[Finding], 
         return None
 
 
+def _why_abstained(ctx: RunContext, verdicts: list[ClaimVerdict]) -> str:
+    """Name the actual cause: an empty draft from a rate-limited model is not thin evidence."""
+    error = ctx.scratchpad.analyst_error
+    if not verdicts and error == "RateLimitError":
+        return ("Model capacity ran out before any claim could be drafted (the provider's rate limit), so this "
+                "says nothing about the evidence. Try again in a minute.")
+    if not verdicts and error:
+        return f"The Analyst could not draft claims ({error}), so no decision was made. Try again."
+    if not verdicts and not ctx.sources:
+        return "No sources were found for this question, so there is nothing to base a decision on."
+    if not verdicts:
+        return "The sources found do not state anything that bears on this question."
+    supported = sum(1 for v in verdicts if not v.struck)
+    return (f"Only {supported} of {len(verdicts)} claims held up against their cited passages, too few to "
+            "support a decision. The removed claims and their reasons are below.")
+
+
 class ReporterInput(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     findings: list[str] = Field(max_length=40)
@@ -148,6 +165,7 @@ async def compose(
     verdict_check, abstain_reason = "skipped", ""
     if abstained:
         open_questions = [f"Which sources would settle: {ctx.question}"]
+        abstain_reason = _why_abstained(ctx, verdicts)
     elif findings:
         verdict_text = "See key findings; the report writer did not finish within its budget."
         try:
