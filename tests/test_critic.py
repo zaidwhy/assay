@@ -33,6 +33,22 @@ def test_fabricated_quote_is_not_found() -> None:
     assert not quote_in_chunk("", CANBERRA_TEXT, 0.6)
 
 
+def test_one_word_slip_in_a_copied_span_is_still_found() -> None:
+    # 10 of 11 tokens sit in one contiguous window: the model misquoted a word, not the fact.
+    assert quote_in_chunk("the city was chosen as the site of the capital in 1908", CANBERRA_TEXT, 0.6)
+
+
+def test_words_gathered_from_across_the_chunk_are_not_a_span() -> None:
+    # Every word occurs in the chunk, but never together; a stitched quote proves nothing.
+    assert not quote_in_chunk("Canberra Griffin 1913 Melbourne compromise", CANBERRA_TEXT, 0.6)
+
+
+def test_short_quote_must_match_exactly() -> None:
+    # Under three tokens there is no window to judge overlap on, so only a verbatim match counts.
+    assert quote_in_chunk("Construction began", CANBERRA_TEXT, 0.6)
+    assert not quote_in_chunk("capital 1908", CANBERRA_TEXT, 0.6)
+
+
 async def test_supported_claim_with_quote_absent_from_chunk_is_struck(settings: Settings) -> None:
     claim = "Sydney is the capital of Australia."
     llm = ScriptedLLM(claims=[(claim, "Sydney was made the national capital by the 1901 constitution")])

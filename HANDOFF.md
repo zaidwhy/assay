@@ -7,7 +7,7 @@ Updated 2026-11-10 02:35 IST.
 - Live demo: https://zaidwhy--assay-web.us-east.modal.run (Modal, one container, secret `assay-keys`).
 - Repo: https://github.com/zaidwhy/assay (public, main).
 - Report: `docs/assay-report.pdf` (5 pages, rendered from `docs/report/report.html`).
-- Tests: 50 (`uv run pytest`).
+- Tests: 53 (`uv run pytest`).
 - Eval: Run A and Run B are in the README and the report; `eval/results.json` holds Run B.
 
 ## Submission form
