@@ -121,6 +121,16 @@ The Critic's verdict on one claim. `verdict` is the model's call (`supported`, `
 true. `reason` explains a strike, for example `quoted span does not occur in the cited passage` or
 `not checked before the critique deadline`.
 
+`passage` is the sentence in the cited chunks that best matches `quote` (`match`), with up to 260
+characters of context on each side (`before`, `after`) and the `chunk_id` it came from, so a reader
+can see the words the verdict rests on. It is `null` when there is no quote or no sentence shares a
+word with it.
+
+```json
+"passage": {"chunk_id": "s9:c0", "before": "...New South Wales in 1911. ",
+            "match": "Canberra was selected as the site of the capital in 1908.", "after": " The city..."}
+```
+
 ```json
 {"type": "claim.verdict", "run_id": "820f365177d5", "seq": 53, "ts": "2026-11-09T15:42:44.257+00:00",
  "data": {"id": "k7", "verdict": "supported",

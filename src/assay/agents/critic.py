@@ -115,16 +115,44 @@ async def judge(ctx: RunContext, request: CriticInput, *, timeout_s: float) -> C
                         quote=judged.quote, reason=reason[:600], span_found=span_found, struck=struck)
 
 
-def _emit_verdict(ctx: RunContext, verdict: ClaimVerdict) -> None:
+_SENTENCE = re.compile(r"[^.!?\n]+[.!?]*")
+PASSAGE_CONTEXT_CHARS = 260
+
+
+def passage_for(quote: str, chunks: list[Chunk]) -> dict | None:
+    """The sentence in the cited chunks that best matches the quote, with its neighbours, so a reader
+    sees the words the verdict rests on rather than the start of a long chunk."""
+    wanted = Counter(_TOKEN.findall(_normalize(quote)))
+    if not wanted:
+        return None
+    best: tuple[float, Chunk, re.Match[str]] | None = None
+    for chunk in chunks:
+        for sentence in _SENTENCE.finditer(chunk.text):
+            have = Counter(_TOKEN.findall(_normalize(sentence.group())))
+            score = sum((wanted & have).values()) / sum(wanted.values())
+            if best is None or score > best[0]:
+                best = (score, chunk, sentence)
+    if best is None or best[0] == 0:
+        return None
+    _, chunk, sentence = best
+    start, end = sentence.span()
+    lead = chunk.text[max(0, start - PASSAGE_CONTEXT_CHARS):start]
+    tail = chunk.text[end:end + PASSAGE_CONTEXT_CHARS]
+    return {"chunk_id": chunk.id, "before": ("..." if start > PASSAGE_CONTEXT_CHARS else "") + lead,
+            "match": sentence.group(), "after": tail + ("..." if end + PASSAGE_CONTEXT_CHARS < len(chunk.text) else "")}
+
+
+def _emit_verdict(ctx: RunContext, verdict: ClaimVerdict, chunks: list[Chunk] | None = None) -> None:
     ctx.emit("claim.verdict", {"id": verdict.claim_id, "verdict": verdict.verdict, "quote": verdict.quote,
                                "reason": verdict.reason, "span_found": verdict.span_found,
-                               "struck": verdict.struck})
+                               "struck": verdict.struck,
+                               "passage": passage_for(verdict.quote, chunks or []) if verdict.quote else None})
 
 
 async def _judge_and_emit(ctx: RunContext, request: CriticInput, timeout_s: float) -> ClaimVerdict:
     verdict = await judge(ctx, request, timeout_s=timeout_s)
     # Emitted as each claim lands so a watcher sees verdicts arrive, not one burst at the end.
-    _emit_verdict(ctx, verdict)
+    _emit_verdict(ctx, verdict, request.chunks)
     return verdict
 
 

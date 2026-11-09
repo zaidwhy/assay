@@ -364,23 +364,47 @@ function selectClaim(id) {
     anchor.prepend(quoted);
   }
   let after = anchor;
-  for (const chunkId of claim.chunk_ids) {
-    const chunk = run.chunks.get(chunkId);
-    if (!chunk) continue;
-    const source = run.sources.get(chunk.source_id);
+  const place = card => { after.after(card); after = card; };
+  // The passage the verdict rests on: the matched sentence in its own context.
+  if (v?.passage) {
+    const chunk = run.chunks.get(v.passage.chunk_id);
     const card = node('div', 'quote cited');
-    const head = node('div', 'src');
-    head.append(node('b', null, `[${chunk.source_id}] ${source?.title || source?.domain || 'source'}`),
-      node('span', null, `${chunkId} · ${source ? source.reliability.toFixed(2) : ''}`));
-    card.append(head, passageWithQuote(chunk.preview, v?.quote, v?.struck));
-    if (source && /^https?:/.test(source.url)) {
-      const link = node('a', null, 'Open source');
-      link.href = source.url; link.target = '_blank'; link.rel = 'noopener';
-      card.append(link);
-    }
-    after.after(card);
-    after = card;
+    card.append(sourceHead(chunk?.source_id, v.passage.chunk_id));
+    const p = node('p');
+    p.append(v.passage.before, node('mark', v.struck ? 'x' : '', v.passage.match), v.passage.after);
+    card.append(p);
+    const link = sourceLink(chunk?.source_id);
+    if (link) card.append(link);
+    place(card);
   }
+  const others = claim.chunk_ids.filter(id => id !== v?.passage?.chunk_id && run.chunks.has(id));
+  if (others.length) {
+    const card = node('div', 'quote cited');
+    card.append(node('div', 'check', v?.passage ? 'Also cited' : 'Cited passages'));
+    for (const chunkId of others) {
+      const row = sourceHead(run.chunks.get(chunkId).source_id, chunkId);
+      const link = sourceLink(run.chunks.get(chunkId).source_id);
+      card.append(row);
+      if (link && !v?.passage) card.append(link);
+    }
+    place(card);
+  }
+}
+
+function sourceHead(sourceId, chunkId) {
+  const source = run.sources.get(sourceId);
+  const head = node('div', 'src');
+  head.append(node('b', null, `[${sourceId ?? '?'}] ${source?.title || source?.domain || 'source'}`),
+    node('span', null, `${chunkId}${source ? ' · ' + source.reliability.toFixed(2) : ''}`));
+  return head;
+}
+
+function sourceLink(sourceId) {
+  const source = run.sources.get(sourceId);
+  if (!source || !/^https?:/.test(source.url)) return null;
+  const link = node('a', null, 'Open source');
+  link.href = source.url; link.target = '_blank'; link.rel = 'noopener';
+  return link;
 }
 
 function verdictLine(v) {
@@ -389,14 +413,6 @@ function verdictLine(v) {
   line.append(node('b', v.struck ? 'x' : 's', v.struck ? 'Removed' : 'Verified'), label);
   if (v.reason) line.append(node('div', null, v.reason));
   return line;
-}
-
-function passageWithQuote(text, quote, struck) {
-  const p = node('p');
-  const at = quote ? text.toLowerCase().indexOf(quote.toLowerCase()) : -1;
-  if (at < 0) { p.append(text + (text.length >= 240 ? '...' : '')); return p; }
-  p.append(text.slice(0, at), node('mark', struck ? 'x' : '', text.slice(at, at + quote.length)), text.slice(at + quote.length));
-  return p;
 }
 
 /* ---------- trace ---------- */

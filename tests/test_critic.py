@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from assay.agents.critic import CriticInput, judge, quote_in_chunk
+from assay.agents.critic import CriticInput, judge, passage_for, quote_in_chunk
 from assay.deadline import Deadline
 from assay.domain import Chunk
 from assay.events import EventBus
@@ -58,3 +58,15 @@ async def test_claim_citing_no_retrieved_chunk_is_struck_without_a_model_call(se
                           timeout_s=5)
     assert verdict.struck and verdict.reason == "cites no retrieved passage"
     assert llm.calls == []
+
+
+def test_passage_for_points_at_the_sentence_the_quote_came_from() -> None:
+    text = ("Street lighting is a large municipal cost. Converting to LED fixtures typically uses about "
+            "50 percent less energy than high-pressure sodium. Fixtures are rated for 15 years.")
+    chunk = Chunk(id="s1:c0", source_id=1, start=0, end=len(text), text=text)
+    passage = passage_for("uses about 50 percent less energy", [chunk])
+    assert passage is not None
+    assert passage["chunk_id"] == "s1:c0"
+    assert "50 percent less energy" in passage["match"]
+    assert passage["before"].endswith("large municipal cost.")
+    assert passage_for("", [chunk]) is None
