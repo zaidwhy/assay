@@ -1,0 +1,48 @@
+[project]
+name = "assay"
+version = "0.1.0"
+description = "Research reports where every claim is checked against the exact passage it cites."
+readme = "README.md"
+authors = [
+    { name = "Zaid Ali Syed", email = "zaidsyed7021@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "ddgs>=9.16.1",
+    "defusedxml>=0.7.1",
+    "fastapi>=0.162.2",
+    "fastembed>=0.9.1",
+    "httpx>=0.28.1",
+    "litellm>=1.108.3",
+    "numpy>=2.5.4",
+    "prometheus-client>=0.26.0",
+    "pydantic>=2.14.3",
+    "pydantic-settings>=2.16.2",
+    "pypdf>=7.0.0",
+    "python-docx>=1.2.0",
+    "python-multipart>=0.0.33",
+    "rank-bm25>=0.2.2",
+    "trafilatura>=2.3.1",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.24,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "fpdf2>=2.9.0",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
+]
+
+[project.scripts]
+assay = "assay.api:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore::UserWarning:pydantic._internal._generate_schema"]
