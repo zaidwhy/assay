@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>assay</title>
+<meta name="description" content="Research a question with four agents; every claim is checked against the exact passage it cites.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect width='20' height='20' rx='4' fill='%232f4a3c'/%3E%3Cpath d='M5 16 L10 4 L15 16 M7.2 11.5 H12.8' fill='none' stroke='%23eef0ea' stroke-width='1.7'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assay.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <a class="brand" href="./" aria-label="assay home"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 17 L10 3 L16 17 M6.6 11 H13.4"/></svg>assay</a>
+    <form class="ask" id="ask">
+      <label class="sr" for="question">Research question</label>
+      <input id="question" name="question" maxlength="1000" minlength="8" autocomplete="off" placeholder="Ask a question that needs evidence, e.g. Should our city switch street lights to LED?" required>
+      <select id="impact" title="High impact runs stop for human approval before the report is released">
+        <option value="">Impact: auto</option>
+        <option value="normal">Normal</option>
+        <option value="high">High (needs approval)</option>
+      </select>
+      <button class="btn primary" id="go" type="submit">Research</button>
+    </form>
+    <label class="btn upload" title="Add PDF, DOCX, HTML, Markdown, TXT or CSV to this session's corpus (max 20 MB)">
+      Add document<input type="file" id="upload" accept=".pdf,.docx,.html,.htm,.md,.txt,.csv" hidden>
+    </label>
+    <button class="btn" id="traceBtn" type="button" disabled>Trace</button>
+  </header>
+
+  <section class="flow" id="flow" aria-label="Agent progress">
+    <div class="step" data-stage="researching"><span class="dot">1</span><div><h4>Researcher <small class="t"></small></h4><p>Plans searches and gathers sources</p></div></div>
+    <div class="step" data-stage="analyzing"><span class="dot">2</span><div><h4>Analyst <small class="t"></small></h4><p>Reads the best passages, drafts claims</p></div></div>
+    <div class="step critic" data-stage="critiquing"><span class="dot">3</span><div><h4>Critic <small class="t"></small></h4><p>Checks each claim against its quoted passage</p></div></div>
+    <div class="step" data-stage="reporting"><span class="dot">4</span><div><h4>Report <small class="t"></small></h4><p>Writes the decision from what held</p></div></div>
+  </section>
+
+  <main class="main">
+    <section class="report" id="report">
+      <div class="empty" id="empty">
+        <h1>Ask a question. Get a decision you can check.</h1>
+        <p>Four agents research it from the web, Wikipedia, arXiv and your own documents. Every claim in the report is tested against the exact words it cites. Claims that fail the test are shown as removed, with the reason, and when too little survives, the report says so instead of guessing.</p>
+        <div class="examples" id="examples"></div>
+      </div>
+
+      <div class="live" id="live" hidden>
+        <div class="kicker" id="questionEcho"></div>
+        <div class="approval" id="approval" hidden>
+          <div><b>Waiting for your approval.</b> <span id="approvalWhy"></span><p>This looks like a high-impact decision, so the report is held until a person reviews the draft below.</p></div>
+          <textarea id="approvalNote" maxlength="500" placeholder="Note (optional)"></textarea>
+          <div class="row"><button class="btn primary" id="approve" type="button">Approve and release</button><button class="btn danger" id="reject" type="button">Reject</button></div>
+        </div>
+        <div class="decision" id="decision">
+          <div class="body"><div class="kicker">Decision</div><h2 id="verdict">Researching...</h2><p id="recommendation"></p></div>
+          <div class="meter"><small>Evidence behind it</small><b id="heldCount">-</b><span id="heldOf"></span><div class="track" id="track"></div></div>
+        </div>
+        <div class="claimsHead"><h3>Claims</h3><small id="claimsNote">Drafted claims appear here and are checked one by one.</small></div>
+        <div class="claims" id="claims"></div>
+        <div class="extras" id="extras"></div>
+        <div class="scores" id="scores" hidden></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="evidence" id="evidence">
+        <h3>Evidence <small id="evidenceFor">select a claim</small></h3>
+        <div class="quote muted" id="quote">Click a claim to see the passage it cites and whether the quoted words were found there.</div>
+      </section>
+      <section>
+        <h3>Sources <small id="sourceCount">reliability</small></h3>
+        <div class="sources" id="sources"></div>
+      </section>
+      <section class="status" id="status" aria-live="polite"></section>
+    </aside>
+  </main>
+</div>
+
+<dialog class="trace" id="trace">
+  <header><h3>Trace <small id="traceSummary"></small></h3><button class="btn" id="traceClose" type="button">Close</button></header>
+  <div class="traceBody"><table><thead><tr><th>Step</th><th>Kind</th><th>Model or tool</th><th class="r">Latency</th><th class="r">Tokens in / out</th><th>Status</th></tr></thead><tbody id="spans"></tbody></table></div>
+</dialog>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

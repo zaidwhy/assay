@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>assay - product screens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#d9d9d6; font-family:Geist, system-ui, sans-serif; padding:36px 16px 80px; color:#222; }
+.intro { max-width:1180px; margin:0 auto 26px; font-size:14px; line-height:1.6; color:#444; }
+.intro b { color:#111; font-weight:600; }
+.panel { max-width:1180px; margin:0 auto 52px; }
+.label { display:flex; gap:12px; align-items:baseline; margin-bottom:10px; font-size:13px; color:#555; flex-wrap:wrap; }
+.label strong { font-size:15px; color:#111; font-weight:600; }
+.swatches { display:inline-flex; gap:4px; margin-left:auto; }
+.swatches i { width:18px; height:18px; border-radius:3px; border:1px solid rgba(0,0,0,.12); }
+.frame { width:100%; aspect-ratio:1280 / 800; position:relative; overflow:hidden; border-radius:10px; box-shadow:0 1px 2px rgba(0,0,0,.08), 0 18px 50px rgba(0,0,0,.12); }
+.app { width:1280px; height:800px; transform-origin:0 0; position:absolute; left:0; top:0; }
+
+/* ---------- shared app layout (themes set the variables) ---------- */
+.app { background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:14px; display:grid; grid-template-rows:60px 92px 1fr; }
+.top { display:flex; align-items:center; gap:18px; padding:0 28px; border-bottom:1px solid var(--rule); background:var(--bar); }
+.brand { font-family:var(--display); font-size:21px; font-weight:600; letter-spacing:-.01em; color:var(--brand); display:flex; align-items:center; gap:9px; }
+.brand svg { width:20px; height:20px; }
+.ask { flex:1; display:flex; align-items:center; gap:10px; background:var(--field); border:1px solid var(--rule); border-radius:8px; height:38px; padding:0 14px; color:var(--ink); font-size:14px; }
+.ask span { color:var(--muted); font-family:var(--mono); font-size:11px; margin-left:auto; }
+.pill { font-family:var(--mono); font-size:11.5px; padding:6px 10px; border-radius:20px; background:var(--okbg); color:var(--ok); white-space:nowrap; }
+.btn { font:inherit; font-size:13px; border:1px solid var(--rule); background:var(--card); color:var(--ink); border-radius:7px; padding:7px 13px; cursor:pointer; }
+.btn.primary { background:var(--brand); color:var(--onbrand); border-color:var(--brand); }
+
+.flow { display:grid; grid-template-columns:repeat(4, 1fr); gap:0; padding:16px 28px; border-bottom:1px solid var(--rule); }
+.step { position:relative; padding:0 18px 0 40px; }
+.step::before { content:''; position:absolute; left:0; top:2px; width:26px; height:26px; border-radius:50%; background:var(--brand); }
+.step::after { content:attr(data-n); position:absolute; left:0; top:2px; width:26px; height:26px; display:grid; place-items:center; color:var(--onbrand); font-family:var(--mono); font-size:11px; }
+.step + .step { border-left:1px solid var(--rule); padding-left:58px; }
+.step + .step::before, .step + .step::after { left:18px; }
+.step h4 { font-size:13.5px; font-weight:600; display:flex; justify-content:space-between; }
+.step h4 small { font-family:var(--mono); font-weight:400; color:var(--muted); font-size:11.5px; }
+.step p { font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.4; }
+.step.check::before { background:var(--accent); }
+
+.main { display:grid; grid-template-columns:1fr 410px; min-height:0; }
+.report { padding:24px 28px; overflow:hidden; border-right:1px solid var(--rule); }
+.kicker { font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.decision { margin-top:8px; background:var(--card); border:1px solid var(--rule); border-left:4px solid var(--ok); border-radius:8px; padding:16px 20px; display:flex; gap:24px; align-items:center; }
+.decision h2 { font-family:var(--display); font-size:25px; font-weight:500; line-height:1.2; letter-spacing:-.01em; flex:1; }
+.meter { width:150px; flex:none; }
+.meter b { font-family:var(--display); font-size:24px; font-weight:500; }
+.meter small { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+.meter .track { display:flex; gap:3px; }
+.meter .track i { flex:1; height:7px; border-radius:2px; background:var(--ok); }
+.meter .track i.p { background:var(--warn); }
+.meter .track i.x { background:var(--bad); }
+
+.claims { margin-top:20px; display:flex; flex-direction:column; gap:8px; }
+.claim { display:grid; grid-template-columns:118px 1fr auto; gap:14px; align-items:start; padding:11px 14px; border-radius:8px; border:1px solid transparent; cursor:pointer; transition:background .15s, border-color .15s; }
+.claim:hover { background:var(--hover); }
+.claim.sel { background:var(--card); border-color:var(--rule); box-shadow:0 1px 3px rgba(0,0,0,.05); }
+.badge { font-size:11.5px; font-weight:500; padding:3px 8px; border-radius:5px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; justify-self:start; }
+.badge::before { content:''; width:7px; height:7px; border-radius:50%; background:currentColor; }
+.badge.s { color:var(--ok); background:var(--okbg); }
+.badge.p { color:var(--warn); background:var(--warnbg); }
+.badge.x { color:var(--bad); background:var(--badbg); }
+.claim .t { font-size:14.5px; line-height:1.45; }
+.claim.x .t { text-decoration:line-through; text-decoration-color:var(--bad); color:var(--muted); }
+.claim .why { display:block; font-size:12.5px; color:var(--bad); margin-top:3px; }
+.claim.p .why { color:var(--warn); }
+.cites { display:flex; gap:4px; }
+.cites i { font-style:normal; font-family:var(--mono); font-size:11px; border:1px solid var(--rule); border-radius:4px; padding:1px 6px; color:var(--muted); background:var(--card); }
+.scores { margin-top:18px; display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; }
+.score { border-top:1px solid var(--rule); padding-top:9px; }
+.score b { font-family:var(--display); font-size:20px; font-weight:500; display:block; }
+.score span { font-size:12px; color:var(--muted); }
+
+.evidence { padding:24px 24px; background:var(--side); overflow:hidden; display:flex; flex-direction:column; gap:14px; }
+.evidence h3 { font-size:13px; font-weight:600; display:flex; justify-content:space-between; }
+.evidence h3 small { font-weight:400; color:var(--muted); font-size:12px; }
+.quote { background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:14px 16px; }
+.quote .src { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; }
+.quote .src b { font-weight:600; }
+.quote .src span { font-family:var(--mono); font-size:11px; color:var(--muted); }
+.quote p { font-family:var(--serif); font-size:15px; line-height:1.6; margin-top:10px; color:var(--ink2); }
+.quote mark { background:var(--hl); color:var(--ink); padding:1px 2px; border-radius:2px; }
+.quote mark.x { background:var(--badbg); color:var(--bad); }
+.quote .check { margin-top:10px; font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:center; }
+.quote .check b { color:var(--ok); font-weight:500; }
+.quote.x .check b { color:var(--bad); }
+.sources { display:flex; flex-direction:column; gap:7px; }
+.srcrow { display:grid; grid-template-columns:22px 1fr 86px 34px; align-items:center; gap:8px; font-size:12.5px; }
+.srcrow .n { font-family:var(--mono); font-size:11px; color:var(--muted); }
+.srcrow .kind { color:var(--muted); font-size:11.5px; display:block; }
+.srcrow .gauge { height:5px; background:var(--rule); border-radius:3px; overflow:hidden; }
+.srcrow .gauge i { display:block; height:100%; background:var(--brand); border-radius:3px; }
+.srcrow .v { font-family:var(--mono); font-size:11px; text-align:right; color:var(--muted); }
+
+/* ---------- 1. Paper and ink ---------- */
+.t1 { --bg:#f7f4ee; --bar:#f7f4ee; --card:#fffdf9; --side:#efebe2; --field:#fffdf9; --hover:#f0ece4; --rule:#ded8cc;
+  --ink:#1d2433; --ink2:#2b3242; --muted:#77706a; --brand:#1d2433; --onbrand:#f7f4ee; --accent:#c8501e;
+  --ok:#2c6e49; --okbg:#e3efe6; --warn:#a16207; --warnbg:#f6ecd5; --bad:#b4401b; --badbg:#f7e1d7; --hl:#f2e3a6;
+  --sans:Geist, sans-serif; --display:Newsreader, serif; --serif:Newsreader, serif; --mono:'Geist Mono', monospace; }
+
+/* ---------- 2. Sage field notebook ---------- */
+.t2 { --bg:#eef0ea; --bar:#e4e8df; --card:#fbfcf8; --side:#e4e8df; --field:#fbfcf8; --hover:#e6eae1; --rule:#cfd6c8;
+  --ink:#1f2b24; --ink2:#2d3a32; --muted:#6b7669; --brand:#2f4a3c; --onbrand:#eef0ea; --accent:#c7871a;
+  --ok:#2f6b46; --okbg:#dbe9dc; --warn:#a46a0a; --warnbg:#f3e6c8; --bad:#a63a2a; --badbg:#f2dcd6; --hl:#f1df9b;
+  --sans:'IBM Plex Sans', sans-serif; --display:'IBM Plex Serif', serif; --serif:'IBM Plex Serif', serif; --mono:'IBM Plex Mono', monospace; }
+
+/* ---------- 3. Graphite and copper (dark) ---------- */
+.t3 { --bg:#17181b; --bar:#1c1d21; --card:#212328; --side:#1c1d21; --field:#212328; --hover:#1f2125; --rule:#2e3036;
+  --ink:#ece6da; --ink2:#d8d1c3; --muted:#8d887f; --brand:#d0844c; --onbrand:#17181b; --accent:#d0844c;
+  --ok:#8fc29a; --okbg:#22322a; --warn:#e2b55c; --warnbg:#3a3122; --bad:#ec8a7a; --badbg:#3c2523; --hl:#5a4527;
+  --sans:'Instrument Sans', sans-serif; --display:Fraunces, serif; --serif:Fraunces, serif; --mono:'Geist Mono', monospace; }
+
+/* ---------- 4. Archive blue and oxblood ---------- */
+.t4 { --bg:#f3f5f8; --bar:#ffffff; --card:#ffffff; --side:#e9edf3; --field:#f3f5f8; --hover:#eaeef4; --rule:#d5dbe5;
+  --ink:#16213a; --ink2:#24304a; --muted:#66708a; --brand:#20335c; --onbrand:#ffffff; --accent:#8a2433;
+  --ok:#24715a; --okbg:#ddefe8; --warn:#9a6312; --warnbg:#f5ead3; --bad:#8a2433; --badbg:#f4dde1; --hl:#dfe7f7;
+  --sans:'IBM Plex Sans', sans-serif; --display:Fraunces, serif; --serif:Newsreader, serif; --mono:'IBM Plex Mono', monospace; }
+.t4 .quote mark { box-shadow:inset 0 -2px 0 var(--brand); }
+</style>
+</head>
+<body>
+<p class="intro"><b>assay - product screens.</b> The real app layout, four palettes, same sample run (illustrative data, not a real run). Read top to bottom: the question, what each agent did, the decision with how much of it held, every claim with a plain-word verdict, and on the right the exact passage that proves the selected claim. <b>Click any claim</b> to see its evidence.</p>
+<div id="panels"></div>
+
+<template id="screen">
+  <div class="app">
+    <header class="top">
+      <div class="brand"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 17 L10 3 L16 17 M6.6 11 H13.4"/></svg>assay</div>
+      <div class="ask">Should the city replace its 9,400 sodium street lights with LED fixtures?<span>session 12</span></div>
+      <div class="pill">Report ready &middot; 18.4 s</div>
+      <button class="btn">Trace</button><button class="btn primary">Export</button>
+    </header>
+    <section class="flow">
+      <div class="step" data-n="1"><h4>Researcher <small>10.9 s</small></h4><p>11 sources from web search, Wikipedia and arXiv</p></div>
+      <div class="step" data-n="2"><h4>Analyst <small>4.9 s</small></h4><p>Read the top 12 passages, drafted 4 claims</p></div>
+      <div class="step check" data-n="3"><h4>Critic <small>1.6 s</small></h4><p>Checked every claim against its quoted passage</p></div>
+      <div class="step" data-n="4"><h4>Report <small>1.0 s</small></h4><p>Wrote the decision from the claims that held</p></div>
+    </section>
+    <section class="main">
+      <div class="report">
+        <div class="kicker">Recommendation</div>
+        <div class="decision">
+          <h2>Proceed with LED at 3000K or warmer, phased over four budget years.</h2>
+          <div class="meter"><small>Evidence behind it</small><b>3 of 4</b> claims held<div class="track"><i></i><i></i><i class="x"></i><i class="p"></i></div></div>
+        </div>
+        <div class="claims"></div>
+        <div class="scores">
+          <div class="score"><b>0.75</b><span>Faithfulness</span></div>
+          <div class="score"><b>0.86</b><span>Citation precision</span></div>
+          <div class="score"><b>4 / 5</b><span>Relevance</span></div>
+          <div class="score"><b>5</b><span>Distinct domains</span></div>
+        </div>
+      </div>
+      <aside class="evidence">
+        <h3>Evidence <small class="for"></small></h3>
+        <div class="quote"></div>
+        <h3>Sources <small>reliability</small></h3>
+        <div class="sources"></div>
+      </aside>
+    </section>
+  </div>
+</template>
+
+<script>
+const claims = [
+  { v: 's', t: 'LED street fixtures draw roughly half the power of the sodium lamps they replace.', cites: [1, 4],
+    src: 1, before: 'Converting to LED fixtures typically ', span: 'uses about 50 percent less energy', after: ' than high-pressure sodium lighting, with the largest savings where fixtures run all night.', check: 'Quote found in passage, overlap 0.94' },
+  { v: 's', t: 'Health guidance recommends a colour temperature of 3000K or lower for street lighting.', cites: [2],
+    src: 2, before: 'Communities are encouraged to limit blue-rich outdoor light and to ', span: 'use a colour temperature of 3000K or lower', after: ' for roadway installations.', check: 'Quote found in passage, overlap 1.00' },
+  { v: 'x', t: 'Conversions pay for themselves in under two years in every city studied.', cites: [5], why: 'Removed: the cited source reports 6 to 11 years, in two cities.',
+    src: 5, before: 'Two mid-sized cities reported that their conversions ', span: 'paid back in six to eleven years', after: ', depending on electricity prices and how the work was financed.', check: 'No passage supports "under two years" or "every city"' },
+  { v: 'p', t: 'Fixtures are rated for 15 to 20 years of service before replacement.', cites: [1, 3], why: 'Partly held: sources support 15 years; 20 appears only in a vendor sheet.',
+    src: 1, before: 'LED street products are commonly ', span: 'rated for 15 years or more', after: ' of operation under typical duty cycles.', check: 'Quote supports 15 years, not 20' },
+];
+const sources = [
+  ['energy.gov', 'Government', .92], ['ama-assn.org', 'Professional body', .88], ['en.wikipedia.org', 'Encyclopedia', .70],
+  ['nrel.gov', 'Research lab', .90], ['citylab.com', 'News', .58],
+];
+const verdictWord = { s: 'Verified', p: 'Partly verified', x: 'Removed' };
+const themes = [
+  ['t1', 'Paper and ink', 'warm paper, navy ink, editorial serif; feels like a briefing memo', ['#f7f4ee', '#1d2433', '#2c6e49', '#c8501e', '#f2e3a6']],
+  ['t2', 'Sage field notebook', 'green-grey, forest and amber, IBM Plex; calm, scientific, outdoorsy', ['#eef0ea', '#2f4a3c', '#2f6b46', '#c7871a', '#f1df9b']],
+  ['t3', 'Graphite and copper', 'dark mode without neon: graphite, ivory text, copper accent, Fraunces', ['#17181b', '#212328', '#ece6da', '#d0844c', '#8fc29a']],
+  ['t4', 'Archive blue and oxblood', 'cool white, deep navy, oxblood for removals; feels like a policy office', ['#f3f5f8', '#20335c', '#24715a', '#8a2433', '#dfe7f7']],
+];
+
+const node = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+function showEvidence(app, i) {
+  const c = claims[i];
+  app.querySelectorAll('.claim').forEach((row, k) => row.classList.toggle('sel', k === i));
+  app.querySelector('.for').textContent = 'for claim ' + (i + 1);
+  const q = app.querySelector('.quote'); q.replaceChildren(); q.className = 'quote' + (c.v === 'x' ? ' x' : '');
+  const [name, kind, rel] = sources[c.src - 1];
+  const head = node('div', 'src'); head.append(node('b', null, '[' + c.src + '] ' + name), node('span', null, kind + ' · reliability ' + rel.toFixed(2)));
+  const p = node('p'); p.append(c.before, node('mark', c.v === 'x' ? 'x' : '', c.span), c.after);
+  const check = node('div', 'check'); check.append(node('b', null, c.v === 'x' ? 'Contradicted' : c.v === 'p' ? 'Partial match' : 'Match'), c.check);
+  if (c.v === 'p') check.firstChild.style.color = 'var(--warn)';
+  q.append(head, p, check);
+}
+
+function build(theme) {
+  const [cls, name, note, sw] = theme;
+  const panel = node('section', 'panel');
+  const label = node('div', 'label'); label.append(node('strong', null, name), node('span', null, note));
+  const swatches = node('span', 'swatches'); sw.forEach(c => { const i = node('i'); i.style.background = c; swatches.append(i); }); label.append(swatches);
+  const frame = node('div', 'frame');
+  const app = document.getElementById('screen').content.firstElementChild.cloneNode(true);
+  app.classList.add(cls);
+  const list = app.querySelector('.claims');
+  claims.forEach((c, i) => {
+    const row = node('div', 'claim ' + c.v);
+    const text = node('div'); text.append(node('span', 't', c.t)); if (c.why) text.append(node('span', 'why', c.why));
+    const cites = node('div', 'cites'); c.cites.forEach(n => cites.append(node('i', null, n)));
+    row.append(node('span', 'badge ' + c.v, verdictWord[c.v]), text, cites);
+    row.addEventListener('click', () => showEvidence(app, i));
+    list.append(row);
+  });
+  const srcList = app.querySelector('.sources');
+  sources.forEach(([d, kind, r], i) => {
+    const row = node('div', 'srcrow');
+    const who = node('div'); who.append(d, node('span', 'kind', kind));
+    const gauge = node('div', 'gauge'); const level = node('i'); level.style.width = (r * 100) + '%'; gauge.append(level);
+    row.append(node('span', 'n', i + 1), who, gauge, node('span', 'v', r.toFixed(2)));
+    srcList.append(row);
+  });
+  frame.append(app); panel.append(label, frame);
+  document.getElementById('panels').append(panel);
+  showEvidence(app, 2);
+  const fit = () => app.style.transform = `scale(${frame.clientWidth / 1280})`;
+  new ResizeObserver(fit).observe(frame); fit();
+}
+themes.forEach(build);
+</script>
+</body>
+</html>

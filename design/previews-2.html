@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>assay - round two</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root { --line:#f2f2ee; --pink:#ff2e88; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#050505; color:#ddd; font-family:Geist, system-ui, sans-serif; padding:40px 16px 80px; }
+.intro { max-width:1180px; margin:0 auto 28px; font-size:14px; color:#8a8a85; line-height:1.6; }
+.intro b { color:#eee; font-weight:500; }
+.panel { max-width:1180px; margin:0 auto 56px; }
+.label { display:flex; justify-content:space-between; align-items:baseline; gap:16px; margin-bottom:10px; font-size:13px; color:#9a9a95; }
+.label strong { color:#fff; font-weight:500; font-size:15px; }
+.label button { background:none; border:1px solid #333; color:#ccc; font:inherit; padding:4px 12px; border-radius:2px; cursor:pointer; flex:none; }
+.label button:hover { border-color:#888; }
+.stage { position:relative; width:100%; aspect-ratio:1180 / 680; overflow:hidden; border:1px solid #1c1c1c; background:#000; container-type:inline-size; }
+.stage > svg { position:absolute; inset:0; width:100%; height:100%; }
+svg text { font-family:Geist; }
+.mono { font-family:'Geist Mono'; }
+
+/* E: Load-bearing */
+#E .claims { position:absolute; left:74%; right:3.5%; top:16%; display:flex; flex-direction:column; gap:3.4cqw; }
+#E .claim { font-size:1.28cqw; line-height:1.45; color:#d6d6d1; opacity:0; transition:opacity .5s, color .6s; position:relative; padding-left:2.6cqw; }
+#E .claim.on { opacity:1; }
+#E .claim .n { position:absolute; left:0; font-family:'Geist Mono'; font-size:.8em; color:#666; top:.15em; }
+#E .claim .v { display:block; font-family:'Geist Mono'; font-size:.78em; margin-top:.5cqw; color:#666; opacity:0; transition:opacity .4s; letter-spacing:.04em; }
+#E .claim .v.on { opacity:1; }
+#E .claim.x { color:#555; }
+#E .claim.x .txt { text-decoration:line-through; text-decoration-color:var(--pink); }
+#E .claim.x .v { color:var(--pink); }
+
+/* F: Chain of custody */
+#F .docs { position:absolute; left:4%; top:15%; width:40%; display:flex; flex-direction:column; gap:1.7cqw; }
+#F .doc { border:1px solid #262626; padding:1.3cqw 1.5cqw; font-family:Newsreader, Georgia, serif; font-size:1.2cqw; line-height:1.55; color:#7d7d78; position:relative; }
+#F .doc h4 { font-family:'Geist Mono'; font-weight:400; font-size:.78em; color:#999; letter-spacing:.06em; margin-bottom:.5cqw; }
+#F .span { position:relative; transition:color .4s; }
+#F .span.hit { color:#fff; }
+#F .span.miss { color:var(--pink); }
+#F .span i { position:absolute; left:0; bottom:-.12em; height:1px; width:0; background:#fff; box-shadow:0 0 6px #fff; transition:width .5s ease; }
+#F .span.miss i { background:var(--pink); box-shadow:0 0 6px var(--pink); }
+#F .sweep { position:absolute; left:1.5cqw; height:1px; width:0; background:var(--pink); opacity:.55; }
+#F .report { position:absolute; left:58%; right:4%; top:15%; }
+#F .report h3 { font-weight:400; font-size:1.9cqw; color:#fff; line-height:1.25; margin-bottom:2.2cqw; }
+#F .sent { font-size:1.32cqw; line-height:1.5; color:#5d5d59; margin-bottom:1.5cqw; transition:color .4s; position:relative; }
+#F .sent.live { color:#e8e8e3; }
+#F .sent.done { color:#cfcfca; }
+#F .sent.x { color:#505050; text-decoration:line-through; text-decoration-color:var(--pink); }
+#F .sent sup { font-family:'Geist Mono'; font-size:.62em; color:#777; }
+#F .rec { font-size:1.45cqw; color:#fff; margin-top:2.4cqw; opacity:0; transition:opacity .8s; }
+#F .rec.on { opacity:1; }
+#F .rec small { display:block; font-family:'Geist Mono'; font-size:.62em; color:#777; margin-top:.6cqw; letter-spacing:.05em; }
+#F .rec small em { color:var(--pink); font-style:normal; }
+
+/* G: Withheld */
+#G { background:#000; }
+#G .sheet { position:absolute; inset:7% 9%; font-family:'Geist Mono'; color:#e9e9e4; }
+#G .hd { font-size:1cqw; letter-spacing:.14em; color:#777; display:flex; justify-content:space-between; border-bottom:1px solid #222; padding-bottom:1.2cqw; }
+#G .hd .rel { color:#777; transition:color .4s; }
+#G .hd .rel.on { color:var(--pink); }
+#G h3 { font-family:Geist; font-weight:400; font-size:2.1cqw; margin:2.6cqw 0 2.4cqw; color:#fff; line-height:1.25; }
+#G .body { font-size:1.4cqw; line-height:2.05; position:relative; }
+#G .ln .cite { color:#555; font-size:.75em; transition:color .4s; }
+#G .ln .cite.ok { color:#fff; }
+#G .redaction { position:absolute; height:1.35em; width:0; background:var(--pink); transition:width .28s cubic-bezier(.7,0,.2,1); overflow:hidden; white-space:nowrap; color:#000; font-size:1em; line-height:1.35em; }
+#G .redaction span { padding-left:.8em; font-size:.66em; letter-spacing:.12em; opacity:0; transition:opacity .3s .3s; }
+#G .redaction.on span { opacity:1; }
+#G .caret { display:inline-block; width:.55em; height:1.1em; background:#e9e9e4; vertical-align:-.15em; animation:blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity:0; } }
+#G .foot { position:absolute; left:0; right:0; bottom:0; border-top:1px solid #222; padding-top:1.2cqw; font-size:1cqw; color:#777; display:flex; justify-content:space-between; align-items:baseline; letter-spacing:.06em; opacity:0; transition:opacity .8s; }
+#G .foot.on { opacity:1; }
+#G .foot b { color:#fff; font-weight:400; font-family:Geist; font-size:1.5cqw; letter-spacing:0; }
+</style>
+</head>
+<body>
+
+<p class="intro"><b>assay - round two.</b> Three new directions, same sample run (illustrative data, not a real run). Each takes one thing assay really does and makes it the picture: claims bearing weight, the exact quoted span, and what gets withheld. Each panel plays when it scrolls into view; press replay.</p>
+
+<section class="panel">
+  <div class="label"><span><strong>E. Load-bearing</strong> &nbsp; a pen of light builds the decision; sources are the footings, claims the columns, and a column with no footing falls</span><button data-replay="E">replay</button></div>
+  <div class="stage" id="E">
+    <svg viewBox="0 0 1180 680" id="Esvg"></svg>
+    <div class="claims">
+      <div class="claim"><span class="n">01</span>LED fixtures draw roughly half the power of sodium lamps.<span class="v">held &nbsp;·&nbsp; energy.gov, nrel.gov</span></div>
+      <div class="claim"><span class="n">02</span>Health guidance says 3000K or lower for street lighting.<span class="v">held &nbsp;·&nbsp; ama-assn.org</span></div>
+      <div class="claim"><span class="n">03</span><span class="txt">Conversions pay back in under two years in every city.</span><span class="v">struck &nbsp;·&nbsp; source says 6 to 11 years</span></div>
+      <div class="claim"><span class="n">04</span>Fixtures last 15 to 20 years before replacement.<span class="v">partly held &nbsp;·&nbsp; sources say 15</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="label"><span><strong>F. Chain of custody</strong> &nbsp; every sentence runs a thread to the exact words that prove it; one thread finds the opposite and lets go</span><button data-replay="F">replay</button></div>
+  <div class="stage" id="F">
+    <svg viewBox="0 0 1180 680" id="Fsvg" preserveAspectRatio="none"></svg>
+    <div class="docs">
+      <div class="doc" data-src="0"><h4>[1] energy.gov</h4>Street lighting is one of the largest electricity costs a city carries. Converting to LED fixtures typically <span class="span" data-k="a">uses about 50 percent less energy<i></i></span> than high-pressure sodium, and products are commonly <span class="span" data-k="d">rated for 15 years or more<i></i></span> of operation.</div>
+      <div class="doc" data-src="1"><h4>[2] ama-assn.org</h4>The guidance asks communities to limit blue-rich outdoor light and to <span class="span" data-k="b">use a colour temperature of 3000K or lower<i></i></span> for street installations.</div>
+      <div class="doc" data-src="2"><h4>[3] citylab</h4>Two mid-sized cities reported that their conversions <span class="span" data-k="c">paid back in six to eleven years<i></i></span>, depending on electricity prices and how the work was financed.<b class="sweep"></b></div>
+    </div>
+    <div class="report">
+      <h3>Should the city replace its 9,400 sodium street lights with LED fixtures?</h3>
+      <div class="sent" data-k="a" data-v="s">LED fixtures draw roughly half the power of the sodium lamps they replace.<sup> 1</sup></div>
+      <div class="sent" data-k="b" data-v="s">Health guidance recommends 3000K or lower for street lighting.<sup> 2</sup></div>
+      <div class="sent" data-k="c" data-v="x">Conversions pay for themselves in under two years in every city studied.<sup> 3</sup></div>
+      <div class="sent" data-k="d" data-v="p">Fixtures are rated for 15 to 20 years of service.<sup> 1</sup></div>
+      <div class="rec">Proceed, at 3000K, phased over four budget years.<small>3 sentences proven to the word &nbsp;·&nbsp; <em>1 let go</em> &nbsp;·&nbsp; 18.4 s</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="label"><span><strong>G. Withheld</strong> &nbsp; the report types itself, then the Critic redacts what no source will stand behind, and says so on the redaction</span><button data-replay="G">replay</button></div>
+  <div class="stage" id="G">
+    <div class="sheet">
+      <div class="hd"><span>DECISION REPORT / RUN 7F3A</span><span class="rel">RELEASED IN FULL</span></div>
+      <h3>Should the city replace its 9,400 sodium street lights with LED fixtures?</h3>
+      <div class="body" id="Gbody"></div>
+      <div class="foot"><b>Proceed, at 3000K, phased over four budget years.</b><span>3 RELEASED &nbsp;·&nbsp; 1 WITHHELD &nbsp;·&nbsp; 18.4 S</span></div>
+    </div>
+  </div>
+</section>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => {
+  const node = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (parent) parent.appendChild(node);
+  return node;
+};
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const tokens = {};
+const guard = id => { tokens[id] = (tokens[id] || 0) + 1; const t = tokens[id]; return () => tokens[id] !== t; };
+
+// one pen: reveals a path at a steady hand speed while a lit nib rides its tip
+function pen(path, ms, nib, stale) {
+  const len = path.getTotalLength();
+  path.style.strokeDasharray = `${len} ${len}`; path.style.strokeDashoffset = len;
+  return new Promise(done => {
+    const t0 = performance.now();
+    (function frame(now) {
+      if (stale()) return done();
+      const k = Math.min(1, (now - t0) / ms), e = ease(k);
+      path.style.strokeDashoffset = len * (1 - e);
+      if (nib) { const p = path.getPointAtLength(len * e); nib.move(p.x, p.y, k < 1); }
+      k < 1 ? requestAnimationFrame(frame) : done();
+    })(t0);
+  });
+}
+function tween(ms, step, stale, curve = ease) {
+  return new Promise(done => {
+    const t0 = performance.now();
+    (function frame(now) {
+      if (stale()) return done();
+      const k = Math.min(1, (now - t0) / ms); step(curve(k));
+      k < 1 ? requestAnimationFrame(frame) : done();
+    })(t0);
+  });
+}
+function nibOf(svg) {
+  const halo = el('circle', { r: 9, fill: '#fff', opacity: 0 }, svg);
+  const tip = el('circle', { r: 2.6, fill: '#fff', opacity: 0 }, svg);
+  return { move(x, y, lit) { for (const c of [halo, tip]) { c.setAttribute('cx', x); c.setAttribute('cy', y); } halo.setAttribute('opacity', lit ? .14 : 0); tip.setAttribute('opacity', lit ? 1 : 0); } };
+}
+
+/* ---------- E: Load-bearing ---------- */
+async function playE() {
+  const stale = guard('E');
+  const root = document.getElementById('E'), svg = document.getElementById('Esvg');
+  svg.replaceChildren();
+  const items = [...root.querySelectorAll('.claim')];
+  items.forEach(c => { c.classList.remove('on', 'x'); c.querySelector('.v').classList.remove('on'); });
+  const W = '#f2f2ee', G = 560;
+  const title = el('text', { x: 60, y: 62, fill: '#fff', 'font-size': 22, opacity: 0 }, svg);
+  title.textContent = 'Should the city replace its 9,400 sodium street lights with LED fixtures?';
+  title.style.transition = 'opacity .8s'; requestAnimationFrame(() => title.setAttribute('opacity', 1));
+  const sources = [['energy.gov', 110], ['ama-assn.org', 260], ['wikipedia', 410], ['nrel.gov', 560], ['citylab', 760]];
+  const cols = [
+    { x: 190, cites: [0, 3], v: 's' }, { x: 340, cites: [1], v: 's' },
+    { x: 520, cites: [4], v: 'x' }, { x: 680, cites: [0, 2], v: 'p' },
+  ];
+  const TOP = 268, HW = 13;
+  const nib = nibOf(svg);
+  await wait(300);
+  await pen(el('path', { d: `M 40 ${G} L 860 ${G}`, stroke: '#3c3c3a', 'stroke-width': 1, fill: 'none' }, svg), 700, nib, stale);
+  // footings: a pile and a pad, drawn in one stroke, with the source named underneath
+  for (const [name, x] of sources) {
+    if (stale()) return;
+    const p = el('path', { d: `M ${x} ${G} L ${x} ${G + 52} M ${x - 22} ${G + 52} L ${x + 22} ${G + 52} L ${x + 15} ${G + 64} L ${x - 15} ${G + 64} Z`, stroke: '#8a8a86', 'stroke-width': 1, fill: 'none' }, svg);
+    const t = el('text', { x, y: G + 88, 'text-anchor': 'middle', fill: '#777', 'font-size': 11, class: 'mono', opacity: 0 }, svg); t.textContent = name;
+    pen(p, 380, null, stale); t.style.transition = 'opacity .5s'; requestAnimationFrame(() => t.setAttribute('opacity', 1));
+    await wait(150);
+  }
+  await wait(350);
+  for (let i = 0; i < cols.length; i++) {
+    if (stale()) return;
+    const c = cols[i];
+    items[i].classList.add('on');
+    const g = el('g', {}, svg);
+    const stroke = c.v === 'p' ? '#9a9a96' : W;
+    const shaft = el('path', { d: `M ${c.x - HW} ${G} L ${c.x - HW} ${TOP} L ${c.x - HW - 9} ${TOP} L ${c.x - HW - 9} ${TOP - 10} L ${c.x + HW + 9} ${TOP - 10} L ${c.x + HW + 9} ${TOP} L ${c.x + HW} ${TOP} L ${c.x + HW} ${G}`, stroke, 'stroke-width': 1.2, fill: 'none' }, g);
+    const num = el('text', { x: c.x, y: G - 14, 'text-anchor': 'middle', fill: '#666', 'font-size': 10, class: 'mono', opacity: 0 }, g); num.textContent = '0' + (i + 1);
+    await pen(shaft, 900, nib, stale);
+    if (c.v === 'p') shaft.style.strokeDasharray = '5 4';
+    num.style.transition = 'opacity .4s'; num.setAttribute('opacity', 1);
+    // load paths: where this claim's weight goes into the ground
+    const loads = [];
+    for (const si of c.cites) {
+      const sx = sources[si][1];
+      const lp = el('path', { d: `M ${c.x} ${G} Q ${(c.x + sx) / 2} ${G + 8} ${sx} ${G + 50}`, stroke: c.v === 'x' ? '#ff2e88' : W, 'stroke-width': 1, fill: 'none', opacity: .9 }, svg);
+      loads.push(lp);
+      await pen(lp, 420, nib, stale);
+    }
+    items[i].querySelector('.v').classList.add('on');
+    if (c.v === 'x') {
+      await wait(250); if (stale()) return;
+      // the footing does not say this: the load path flickers out and the column has nothing under it
+      for (const f of [.2, .9, .1, .7, 0]) { loads.forEach(l => l.setAttribute('opacity', f)); await wait(70); }
+      shaft.setAttribute('stroke', '#ff2e88'); items[i].classList.add('x');
+      await wait(200);
+      const pivotX = c.x + HW, pivotY = G;
+      await tween(820, k => g.setAttribute('transform', `rotate(${k * 74} ${pivotX} ${pivotY})`), stale, t => t * t * t);
+      await tween(180, k => g.setAttribute('transform', `rotate(${74 - Math.sin(k * Math.PI) * 4} ${pivotX} ${pivotY})`), stale, t => t);
+      g.style.transition = 'opacity 1.2s'; g.setAttribute('opacity', .55);
+    }
+    await wait(380);
+  }
+  if (stale()) return;
+  // the decision is the beam: it has to span the gap the fallen claim left
+  const L = cols[0].x - 40, R = cols[3].x + 40;
+  const beam = el('path', { d: `M ${L} ${TOP - 10} L ${R} ${TOP - 10} L ${R} ${TOP - 26} L ${L} ${TOP - 26} Z`, stroke: W, 'stroke-width': 1.3, fill: 'none' }, svg);
+  await pen(beam, 1300, nib, stale);
+  const glow = el('rect', { x: L, y: TOP - 26, width: R - L, height: 16, fill: '#fff', opacity: 0 }, svg);
+  glow.style.transition = 'opacity .6s'; glow.setAttribute('opacity', .07);
+  const rec = el('text', { x: (L + R) / 2, y: TOP - 50, 'text-anchor': 'middle', fill: '#fff', 'font-size': 20, opacity: 0 }, svg);
+  rec.textContent = 'Proceed, at 3000K, phased over four budget years.';
+  const stats = el('text', { x: (L + R) / 2, y: TOP - 80, 'text-anchor': 'middle', fill: '#777', 'font-size': 11, class: 'mono', opacity: 0 }, svg);
+  stats.textContent = 'RESTS ON 3 OF 4 CLAIMS  ·  18.4 S';
+  [rec, stats].forEach(n => { n.style.transition = 'opacity .9s'; n.setAttribute('opacity', 1); });
+}
+
+/* ---------- F: Chain of custody ---------- */
+async function playF() {
+  const stale = guard('F');
+  const root = document.getElementById('F'), svg = document.getElementById('Fsvg');
+  svg.replaceChildren();
+  const sents = [...root.querySelectorAll('.sent')];
+  const spans = Object.fromEntries([...root.querySelectorAll('.span')].map(s => [s.dataset.k, s]));
+  sents.forEach(s => s.classList.remove('live', 'done', 'x'));
+  Object.values(spans).forEach(s => { s.classList.remove('hit', 'miss'); s.querySelector('i').style.width = '0'; });
+  root.querySelector('.rec').classList.remove('on');
+  const sweep = root.querySelector('.sweep'); sweep.style.transition = 'none'; sweep.style.width = '0';
+  const nib = nibOf(svg);
+  const frame = root.getBoundingClientRect();
+  const sx = 1180 / frame.width, sy = 680 / frame.height;
+  const local = r => ({ l: (r.left - frame.left) * sx, r: (r.right - frame.left) * sx, t: (r.top - frame.top) * sy, b: (r.bottom - frame.top) * sy });
+  await wait(700);
+  for (const s of sents) {
+    if (stale()) return;
+    s.classList.add('live');
+    const target = spans[s.dataset.k];
+    const a = local(s.getBoundingClientRect());
+    const tr = local([...target.getClientRects()].pop());
+    const card = local(target.closest('.doc').getBoundingClientRect());
+    const x0 = a.l - 12, y0 = a.t + 12, x1 = card.r, y1 = (tr.t + tr.b) / 2;
+    const thread = el('path', { d: `M ${x0} ${y0} C ${x0 - 90} ${y0}, ${x1 + 90} ${y1}, ${x1} ${y1}`, stroke: '#f2f2ee', 'stroke-width': 1, fill: 'none' }, svg);
+    await pen(thread, 650, nib, stale);
+    if (s.dataset.v === 'x') {
+      // the Critic reads the whole cited source looking for the words; what it finds says the opposite
+      const doc = target.closest('.doc'), lh = parseFloat(getComputedStyle(doc).lineHeight);
+      const rows = Math.round((doc.clientHeight - doc.querySelector('h4').offsetHeight - 20) / lh);
+      for (let r = 0; r < rows; r++) {
+        if (stale()) return;
+        sweep.style.transition = 'none'; sweep.style.width = '0'; sweep.style.top = (doc.querySelector('h4').offsetHeight + 12 + (r + 1) * lh) + 'px';
+        await wait(20); sweep.style.transition = 'width .3s linear'; sweep.style.width = '88%'; await wait(320);
+      }
+      sweep.style.width = '0';
+      target.classList.add('miss'); target.querySelector('i').style.width = '100%';
+      thread.setAttribute('stroke', '#ff2e88');
+      const tag = el('text', { x: (x0 + x1) / 2, y: (y0 + y1) / 2 - 10, fill: '#ff2e88', 'font-size': 11, class: 'mono', 'text-anchor': 'middle', opacity: 0 }, svg);
+      tag.textContent = 'says 6 to 11 years';
+      tag.style.transition = 'opacity .3s'; tag.setAttribute('opacity', 1);
+      await wait(900); if (stale()) return;
+      const len = thread.getTotalLength();
+      await tween(700, k => thread.style.strokeDashoffset = len * k, stale);
+      tag.style.transition = 'opacity .6s'; tag.setAttribute('opacity', .5);
+      s.classList.remove('live'); s.classList.add('x');
+    } else {
+      target.classList.add('hit');
+      target.querySelector('i').style.width = s.dataset.v === 'p' ? '55%' : '100%';
+      const knot = el('circle', { cx: x1, cy: y1, r: 0, fill: '#fff' }, svg);
+      await tween(200, k => knot.setAttribute('r', 2.6 * k), stale);
+      if (s.dataset.v === 'p') {
+        thread.style.strokeDasharray = '4 4'; thread.setAttribute('stroke', '#999');
+        const tag = el('text', { x: (x0 + x1) / 2, y: (y0 + y1) / 2 + 18, fill: '#888', 'font-size': 11, class: 'mono', 'text-anchor': 'middle' }, svg);
+        tag.textContent = '15 proven, 20 not';
+      }
+      s.classList.remove('live'); s.classList.add('done');
+      thread.style.transition = 'opacity .8s'; thread.setAttribute('opacity', .55);
+    }
+    await wait(450);
+  }
+  if (stale()) return;
+  root.querySelector('.rec').classList.add('on');
+}
+
+/* ---------- G: Withheld ---------- */
+async function playG() {
+  const stale = guard('G');
+  const root = document.getElementById('G'), body = document.getElementById('Gbody');
+  body.replaceChildren();
+  root.querySelector('.foot').classList.remove('on');
+  const rel = root.querySelector('.rel'); rel.textContent = 'RELEASED IN FULL'; rel.classList.remove('on');
+  const lines = [
+    ['LED street fixtures draw roughly half the power of the sodium lamps they replace.', '[1,4]', 's'],
+    ['Health guidance recommends a colour temperature of 3000K or lower.', '[2]', 's'],
+    ['Conversions pay for themselves in under two years in every city studied.', '[5]', 'x'],
+    ['Fixtures are rated for at least 15 years of service before replacement.', '[1,3]', 's'],
+  ];
+  const caret = document.createElement('span'); caret.className = 'caret';
+  const typed = [];
+  await wait(500);
+  for (const [text, cite] of lines) {
+    const ln = document.createElement('span'); ln.className = 'ln';
+    const words = document.createElement('span'); ln.appendChild(words);
+    const c = document.createElement('span'); c.className = 'cite'; ln.appendChild(c);
+    body.appendChild(ln); body.appendChild(document.createTextNode(' ')); body.appendChild(caret);
+    for (let i = 0; i <= text.length; i += 2) { if (stale()) return; words.textContent = text.slice(0, i); await wait(14); }
+    words.textContent = text; c.textContent = ' ' + cite;
+    typed.push(ln);
+    await wait(140);
+  }
+  caret.remove();
+  await wait(700);
+  for (let i = 0; i < lines.length; i++) {
+    if (stale()) return;
+    const ln = typed[i];
+    if (lines[i][2] === 's') { ln.querySelector('.cite').classList.add('ok'); await wait(420); continue; }
+    // one redaction per line box the sentence occupies; the first carries the reason
+    const rects = [...ln.getClientRects()], base = body.getBoundingClientRect();
+    const widest = rects.reduce((w, rc, k) => rc.width > rects[w].width ? k : w, 0);
+    for (let r = 0; r < rects.length; r++) {
+      const redaction = document.createElement('span'); redaction.className = 'redaction';
+      redaction.style.left = (rects[r].left - base.left - 3) + 'px';
+      redaction.style.top = (rects[r].top - base.top) + 'px';
+      redaction.style.height = rects[r].height + 'px';
+      redaction.style.lineHeight = rects[r].height + 'px';
+      const why = document.createElement('span'); why.textContent = r === widest ? 'WITHHELD - SOURCE 5 SAYS 6 TO 11 YEARS' : 'WITHHELD'; redaction.appendChild(why);
+      body.appendChild(redaction);
+      requestAnimationFrame(() => requestAnimationFrame(() => { redaction.style.width = (rects[r].width + 6) + 'px'; redaction.classList.add('on'); }));
+      await wait(300);
+    }
+    rel.textContent = 'RELEASED WITH 1 WITHHOLDING'; rel.classList.add('on');
+    await wait(700);
+  }
+  if (stale()) return;
+  root.querySelector('.foot').classList.add('on');
+}
+
+const players = { E: playE, F: playF, G: playG };
+document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () => players[b.dataset.replay]()));
+const seen = new IntersectionObserver(entries => entries.forEach(e => {
+  if (e.isIntersecting && !e.target.dataset.played) { e.target.dataset.played = 1; players[e.target.id](); }
+}), { threshold: .45 });
+document.fonts.ready.then(() => Object.keys(players).forEach(id => seen.observe(document.getElementById(id))));
+</script>
+</body>
+</html>

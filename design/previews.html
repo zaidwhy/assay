@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>assay - four directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root { --ink:#0a0a0a; --line:#f2f2ee; --dim:#6d6d68; --pink:#ff2e88; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#050505; color:#ddd; font-family:Geist, system-ui, sans-serif; padding:40px 16px 80px; }
+.intro { max-width:1180px; margin:0 auto 28px; font-size:14px; color:#8a8a85; line-height:1.6; }
+.intro b { color:#eee; font-weight:500; }
+.panel { max-width:1180px; margin:0 auto 56px; }
+.label { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; font-size:13px; color:#9a9a95; }
+.label strong { color:#fff; font-weight:500; font-size:15px; letter-spacing:.02em; }
+.label button { background:none; border:1px solid #333; color:#ccc; font:inherit; padding:4px 12px; border-radius:2px; cursor:pointer; }
+.label button:hover { border-color:#888; }
+.stage { position:relative; width:100%; aspect-ratio: 1180 / 680; overflow:hidden; border:1px solid #1c1c1c; }
+.stage > svg, .stage > .fill { position:absolute; inset:0; width:100%; height:100%; }
+
+/* ---------- A: Hallmark ---------- */
+#A { background:#000; font-family:Geist; }
+#A .fill { padding:4.2% 5%; display:flex; flex-direction:column; }
+#A .q { font-size:clamp(14px,2.2vw,26px); color:#fff; font-weight:400; letter-spacing:-.01em; max-width:80%; line-height:1.25; }
+#A .meta { font-family:'Geist Mono'; font-size:clamp(8px,.95vw,11px); color:#666; margin-top:1.2%; letter-spacing:.08em; text-transform:uppercase; }
+#A .rows { margin-top:4%; border-top:1px solid #222; position:relative; flex:1; }
+#A .row { display:grid; grid-template-columns:5% 1fr 14% 9%; align-items:center; border-bottom:1px solid #1a1a1a; padding:1.6% 0; opacity:0; transition:opacity .5s; font-size:clamp(10px,1.35vw,16px); color:#cfcfca; position:relative; }
+#A .row.on { opacity:1; }
+#A .n { font-family:'Geist Mono'; color:#555; font-size:.75em; }
+#A .cites { font-family:'Geist Mono'; font-size:.68em; color:#777; }
+#A .mark { justify-self:end; width:clamp(26px,3.3vw,40px); height:clamp(26px,3.3vw,40px); border:1px solid #fff; display:grid; place-items:center; font-family:'Geist Mono'; font-size:.7em; color:#fff; transform:scale(1.6); opacity:0; transition:transform .18s cubic-bezier(.2,1.6,.4,1), opacity .12s; }
+#A .mark.on { transform:scale(1); opacity:1; }
+#A .mark.p { border-style:dashed; color:#bbb; border-color:#bbb; }
+#A .mark.x { border-color:var(--pink); color:var(--pink); }
+#A .strike { position:absolute; left:5%; top:50%; height:1px; width:0; background:var(--pink); box-shadow:0 0 8px var(--pink); transition:width .7s ease; }
+#A .row.struck .txt { color:#555; transition:color .6s .4s; }
+#A .scan { position:absolute; left:-2%; right:-2%; height:1px; background:linear-gradient(90deg,transparent,#fff 20%,#fff 80%,transparent); box-shadow:0 0 14px #fff; top:0; opacity:0; }
+#A .verdict { margin-top:3%; display:flex; gap:4%; align-items:baseline; opacity:0; transition:opacity .8s; }
+#A .verdict.on { opacity:1; }
+#A .verdict .v { font-size:clamp(12px,1.7vw,20px); color:#fff; }
+#A .verdict .s { font-family:'Geist Mono'; font-size:clamp(8px,.95vw,11px); color:#777; letter-spacing:.06em; }
+#A .verdict .s em { color:var(--pink); font-style:normal; }
+
+/* ---------- B: Galley proof ---------- */
+#B { background:#f1ece1; color:#1c1a16; }
+#B .fill { display:grid; grid-template-columns: 1fr 26%; padding:5% 4% 4% 7%; gap:3%; font-family:Newsreader, Georgia, serif; }
+#B h2 { font-weight:500; font-size:clamp(15px,2.4vw,30px); line-height:1.15; letter-spacing:-.01em; }
+#B .kick { font-family:'Geist Mono'; font-size:clamp(7px,.85vw,10px); letter-spacing:.14em; text-transform:uppercase; color:#8b8475; margin-bottom:2%; }
+#B p { font-size:clamp(10px,1.4vw,17px); line-height:1.62; margin-top:3%; }
+#B sup { font-family:'Geist Mono'; font-size:.6em; color:#b5301b; }
+#B .s { position:relative; transition:color .5s; }
+#B .s.gone { color:#a49c8c; }
+#B p { position:relative; }
+#B p > svg.proof { position:absolute; left:0; top:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+#B .margin { border-left:1px solid #cfc6b4; padding-left:9%; position:relative; font-family:Newsreader; font-style:italic; color:#b5301b; font-size:clamp(9px,1.15vw,14px); line-height:1.4; }
+#B .note { position:absolute; left:9%; right:0; opacity:0; transition:opacity .6s; }
+#B .note.on { opacity:1; }
+#B .note b { font-style:normal; font-family:'Geist Mono'; font-weight:500; font-size:.8em; letter-spacing:.05em; }
+#B .fn { grid-column:1 / -1; align-self:end; border-top:1px solid #cfc6b4; padding-top:1.2%; font-family:'Geist Mono'; font-size:clamp(7px,.8vw,10px); color:#7c7466; display:flex; gap:3%; flex-wrap:wrap; }
+#B .stamp { position:absolute; right:5%; bottom:16%; border:2px solid #b5301b; color:#b5301b; font-family:'Geist Mono'; font-size:clamp(8px,1vw,12px); letter-spacing:.12em; padding:.6% 1.2%; transform:rotate(-4deg) scale(1.5); opacity:0; transition:all .25s cubic-bezier(.2,1.5,.4,1); }
+#B .stamp.on { opacity:.9; transform:rotate(-4deg) scale(1); }
+
+/* ---------- C: Loom ---------- */
+#C { background:#000; }
+#C text { font-family:Geist; }
+#C .src { font-family:'Geist Mono'; font-size:11px; fill:#888; letter-spacing:.04em; }
+#C .ct { font-size:15px; fill:#d8d8d3; }
+#C .ct.gone { fill:#4a4a46; transition:fill .8s; }
+
+/* ---------- D: Seismograph ---------- */
+#D { background:#000; }
+#D text { font-family:'Geist Mono'; }
+</style>
+</head>
+<body>
+
+<p class="intro"><b>assay - pick a direction.</b> Same sample run in all four (illustrative data, not a real run): the question, four claims the Analyst drafted, the Critic's verdicts, one claim struck because its cited source says something else. Each panel animates once; press replay. Pick one, or one idea from one and the ground of another.</p>
+
+<section class="panel">
+  <div class="label"><span><strong>A. Hallmark</strong> &nbsp; each claim is punched with an assay mark; a scan line of light is the Critic</span><button data-replay="A">replay</button></div>
+  <div class="stage" id="A"><div class="fill">
+    <div class="q">Should the city replace its 9,400 sodium street lights with LED fixtures?</div>
+    <div class="meta">run 7f3a &nbsp;·&nbsp; 11 sources &nbsp;·&nbsp; 3 agents done &nbsp;·&nbsp; critic assaying</div>
+    <div class="rows">
+      <div class="scan"></div>
+      <div class="row" data-v="s"><span class="n">01</span><span class="txt">LED street fixtures draw roughly half the power of the sodium lamps they replace.</span><span class="cites">[1] [4]</span><span class="mark">S</span><i class="strike"></i></div>
+      <div class="row" data-v="s"><span class="n">02</span><span class="txt">Health guidance recommends a colour temperature of 3000K or lower for street lighting.</span><span class="cites">[2]</span><span class="mark">S</span><i class="strike"></i></div>
+      <div class="row" data-v="x"><span class="n">03</span><span class="txt">Conversions pay for themselves in under two years in every city studied.</span><span class="cites">[5]</span><span class="mark x">X</span><i class="strike"></i></div>
+      <div class="row" data-v="p"><span class="n">04</span><span class="txt">Fixtures are rated for 15 to 20 years of service before replacement.</span><span class="cites">[1] [3]</span><span class="mark p">P</span><i class="strike"></i></div>
+    </div>
+    <div class="verdict"><span class="v">Proceed, at 3000K, phased over four budget years.</span><span class="s">3 held &nbsp;·&nbsp; <em>1 struck</em> &nbsp;·&nbsp; 18.4 s</span></div>
+  </div></div>
+</section>
+
+<section class="panel">
+  <div class="label"><span><strong>B. Galley proof</strong> &nbsp; the report is a proof sheet; the Critic is the editor with a red pen</span><button data-replay="B">replay</button></div>
+  <div class="stage" id="B"><div class="fill">
+    <div>
+      <div class="kick">Decision report &nbsp;/&nbsp; proof 1 &nbsp;/&nbsp; run 7f3a</div>
+      <h2>Should the city replace its 9,400 sodium street lights with LED fixtures?</h2>
+      <p>
+        <span class="s" data-i="0">LED street fixtures draw roughly half the power of the sodium lamps they replace.<sup>1,4</sup></span>
+        <span class="s" data-i="1">Health guidance recommends a colour temperature of 3000K or lower for street lighting.<sup>2</sup></span>
+        <span class="s" data-i="2">Conversions pay for themselves in under two years in every city studied.<sup>5</sup></span>
+        <span class="s" data-i="3">Fixtures are rated for 15 to 20 years of service before replacement.<sup>1,3</sup></span>
+      </p>
+      <p><b style="font-weight:500">Recommendation.</b> Proceed, at 3000K, phased over four budget years.</p>
+    </div>
+    <div class="margin">
+      <div class="note" data-i="0" style="top:2%"><b>OK</b> &nbsp;src 1, para 3: "about 50 percent less energy"</div>
+      <div class="note" data-i="1" style="top:17%"><b>OK</b> &nbsp;src 2 states 3000K</div>
+      <div class="note" data-i="2" style="top:34%"><b>DELE</b> &nbsp;src 5 reports 6 to 11 years, and only for two cities. No source says "every".</div>
+      <div class="note" data-i="3" style="top:62%"><b>QUERY</b> &nbsp;src 3 says 15; 20 is the vendor's own figure</div>
+    </div>
+    <div class="fn"><span>1 energy.gov</span><span>2 ama-assn.org</span><span>3 en.wikipedia.org</span><span>4 nrel.gov</span><span>5 citylab blog</span></div>
+    <div class="stamp">3 PASSED &nbsp;1 STRUCK</div>
+  </div></div>
+</section>
+
+<section class="panel">
+  <div class="label"><span><strong>C. Loom</strong> &nbsp; sources are the warp, claims the weft; a claim with no source thread frays</span><button data-replay="C">replay</button></div>
+  <div class="stage" id="C"><svg viewBox="0 0 1180 680" id="Csvg"></svg></div>
+</section>
+
+<section class="panel">
+  <div class="label"><span><strong>D. Seismograph</strong> &nbsp; one pen draws the whole run against the 30 second deadline</span><button data-replay="D">replay</button></div>
+  <div class="stage" id="D"><svg viewBox="0 0 1180 680" id="Dsvg"></svg></div>
+</section>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => {
+  const node = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (parent) parent.appendChild(node);
+  return node;
+};
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const timers = {};
+function guard(id) { timers[id] = (timers[id] || 0) + 1; const token = timers[id]; return () => timers[id] !== token; }
+
+/* A */
+async function playA() {
+  const stale = guard('A');
+  const root = document.getElementById('A');
+  const rows = [...root.querySelectorAll('.row')];
+  const scan = root.querySelector('.scan');
+  const verdict = root.querySelector('.verdict');
+  rows.forEach(r => { r.classList.remove('on', 'struck'); r.querySelector('.mark').classList.remove('on'); r.querySelector('.strike').style.width = '0'; });
+  verdict.classList.remove('on'); scan.style.opacity = 0;
+  for (const r of rows) { await wait(260); if (stale()) return; r.classList.add('on'); }
+  await wait(500);
+  scan.style.transition = 'none'; scan.style.top = '0px'; scan.style.opacity = 1;
+  for (const r of rows) {
+    const y = r.offsetTop + r.offsetHeight / 2;
+    scan.style.transition = 'top .55s cubic-bezier(.6,0,.3,1)'; scan.style.top = y + 'px';
+    await wait(600); if (stale()) return;
+    r.querySelector('.mark').classList.add('on');
+    if (r.dataset.v === 'x') { await wait(200); r.classList.add('struck'); r.querySelector('.strike').style.width = '72%'; await wait(700); }
+    await wait(250);
+  }
+  scan.style.transition = 'opacity .4s'; scan.style.opacity = 0;
+  await wait(300); if (stale()) return; verdict.classList.add('on');
+}
+
+/* B */
+async function playB() {
+  const stale = guard('B');
+  const root = document.getElementById('B');
+  const spans = [...root.querySelectorAll('.s')];
+  const notes = [...root.querySelectorAll('.note')];
+  const stamp = root.querySelector('.stamp');
+  spans.forEach(s => s.classList.remove('gone')); root.querySelectorAll('svg.proof').forEach(n => n.remove());
+  notes.forEach(n => n.classList.remove('on')); stamp.classList.remove('on');
+  await wait(700);
+  for (let i = 0; i < spans.length; i++) {
+    if (stale()) return;
+    const s = spans[i];
+    if (i === 2) {
+      // a hand-drawn strike: one slightly wavering red line per text line box, ending in a delete loop
+      const rects = [...s.getClientRects()]; const base = s.parentElement.getBoundingClientRect();
+      const svg = el('svg', { class: 'proof' }); s.parentElement.appendChild(svg);
+      let delay = 0;
+      rects.forEach((rc, k) => {
+        const y = rc.top - base.top + rc.height * 0.55, x0 = rc.left - base.left, x1 = rc.right - base.left;
+        const d = `M${x0},${y + 1} C${x0 + (x1 - x0) * .3},${y - 2} ${x0 + (x1 - x0) * .7},${y + 2} ${x1},${y - 1}` + (k === rects.length - 1 ? ` q 10,-14 4,-16 q -8,-1 -2,14` : '');
+        const p = el('path', { d, fill: 'none', stroke: '#b5301b', 'stroke-width': 1.6, 'stroke-linecap': 'round' }, svg);
+        const len = p.getTotalLength(); p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+        p.style.transition = `stroke-dashoffset ${len / 900}s ease-in-out ${delay}s`; delay += len / 900;
+        requestAnimationFrame(() => requestAnimationFrame(() => p.style.strokeDashoffset = 0));
+      });
+      await wait(delay * 1000 + 100); s.classList.add('gone');
+    } else {
+      s.style.background = 'rgba(181,48,27,.08)'; await wait(500); s.style.background = '';
+    }
+    notes[i].classList.add('on');
+    await wait(650);
+  }
+  if (stale()) return; stamp.classList.add('on');
+}
+
+/* C: Loom */
+function playC() {
+  const stale = guard('C');
+  const svg = document.getElementById('Csvg'); svg.replaceChildren();
+  const sources = ['energy.gov', 'ama-assn.org', 'wikipedia', 'nrel.gov', 'citylab'];
+  const claims = [
+    { t: 'LED fixtures draw roughly half the power of sodium lamps', c: [0, 3], v: 's' },
+    { t: 'Health guidance: 3000K or lower for street lighting', c: [1], v: 's' },
+    { t: 'Conversions pay back in under two years everywhere', c: [4], v: 'x' },
+    { t: 'Fixtures last 15 to 20 years before replacement', c: [0, 2], v: 'p' },
+  ];
+  const X0 = 90, DX = 92, Y0 = 150, DY = 105, top = 92, bottom = 600;
+  el('text', { x: 90, y: 50, fill: '#fff', 'font-size': 20 }, svg).textContent = 'Should the city replace its 9,400 sodium street lights with LED fixtures?';
+  const warps = sources.map((s, i) => {
+    const x = X0 + i * DX;
+    const t = el('text', { x, y: top - 14, class: 'src', 'text-anchor': 'middle' }, svg); t.textContent = s;
+    const ln = el('line', { x1: x, y1: top, x2: x, y2: top, stroke: '#3a3a38', 'stroke-width': 1 }, svg);
+    return { x, ln };
+  });
+  warps.forEach((w, i) => setTimeout(() => { if (stale()) return; w.ln.style.transition = 'all .9s ease'; w.ln.setAttribute('y2', bottom); }, 100 + i * 120));
+  claims.forEach((c, ci) => {
+    const y = Y0 + ci * DY;
+    const startAt = 1300 + ci * 1300;
+    const weft = el('path', { d: '', fill: 'none', stroke: c.v === 'x' ? '#ff2e88' : '#f2f2ee', 'stroke-width': 1.3 }, svg);
+    // the weft passes over a cited warp and under the others, so the cloth is legible as cloth
+    let d = `M ${X0 - 40} ${y}`;
+    warps.forEach((w, wi) => { const over = c.c.includes(wi); d += ` L ${w.x - 14} ${y} Q ${w.x} ${y + (over ? -7 : 7)} ${w.x + 14} ${y}`; });
+    d += ` L 560 ${y}`;
+    weft.setAttribute('d', d);
+    const len = weft.getTotalLength();
+    const stop = c.v === 'x' ? len * 0.78 : len;
+    weft.style.strokeDasharray = `${stop} ${len}`; weft.style.strokeDashoffset = stop;
+    const label = el('text', { x: 600, y: y + 5, class: 'ct', opacity: 0 }, svg); label.textContent = c.t;
+    const mark = el('text', { x: 1110, y: y + 5, 'font-family': 'Geist Mono', 'font-size': 12, fill: c.v === 'x' ? '#ff2e88' : c.v === 'p' ? '#999' : '#fff', 'text-anchor': 'end', opacity: 0 }, svg);
+    mark.textContent = c.v === 's' ? 'held' : c.v === 'p' ? 'partly held' : 'struck';
+    setTimeout(() => {
+      if (stale()) return;
+      label.style.transition = 'opacity .5s'; label.setAttribute('opacity', 1);
+      weft.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.5,0,.3,1)'; weft.style.strokeDashoffset = 0;
+      c.c.forEach(wi => {
+        const k = el('circle', { cx: warps[wi].x, cy: y - 3.5, r: 0, fill: c.v === 'x' ? '#ff2e88' : '#fff' }, svg);
+        setTimeout(() => { if (stale()) return; k.style.transition = 'r .25s'; k.setAttribute('r', 3.2); warps[wi].ln.setAttribute('stroke', '#777'); }, 300 + wi * 160);
+      });
+    }, startAt);
+    setTimeout(() => {
+      if (stale()) return;
+      mark.style.transition = 'opacity .4s'; mark.setAttribute('opacity', 1);
+      if (c.v === 'x') {
+        // the thread found no warp that says this, so it frays where the evidence should have been
+        const fx = X0 + 4 * DX - 8;
+        for (let f = 0; f < 6; f++) {
+          const a = (f - 2.5) * 0.28;
+          const p = el('path', { d: `M ${fx} ${y} q ${18 + f * 3} ${a * 20} ${30 + f * 4} ${a * 46 + (f % 2 ? 6 : -4)}`, fill: 'none', stroke: '#ff2e88', 'stroke-width': .8, opacity: .8 }, svg);
+          const l = p.getTotalLength(); p.style.strokeDasharray = l; p.style.strokeDashoffset = l;
+          requestAnimationFrame(() => { p.style.transition = `stroke-dashoffset .6s ease ${f * .06}s`; p.style.strokeDashoffset = 0; });
+        }
+        label.classList.add('gone');
+        const s = el('line', { x1: 600, y1: y, x2: 600, y2: y, stroke: '#ff2e88', 'stroke-width': 1 }, svg);
+        requestAnimationFrame(() => { s.style.transition = 'all .7s ease .2s'; s.setAttribute('x2', 600 + label.getComputedTextLength()); });
+      }
+    }, startAt + 1200);
+  });
+  setTimeout(() => {
+    if (stale()) return;
+    const v = el('text', { x: 90, y: 640, fill: '#fff', 'font-size': 17, opacity: 0 }, svg); v.textContent = 'Proceed, at 3000K, phased over four budget years.';
+    const s = el('text', { x: 1110, y: 640, 'font-family': 'Geist Mono', 'font-size': 12, fill: '#777', 'text-anchor': 'end', opacity: 0 }, svg); s.textContent = '3 held · 1 struck · 18.4 s';
+    [v, s].forEach(n => { n.style.transition = 'opacity .8s'; n.setAttribute('opacity', 1); });
+  }, 1300 + 4 * 1300 + 1000);
+}
+
+/* D: Seismograph */
+function playD() {
+  const stale = guard('D');
+  const svg = document.getElementById('Dsvg'); svg.replaceChildren();
+  const L = 150, R = 1110, T = 120, secs = 30, px = s => L + (R - L) * s / secs;
+  const lanes = ['researcher', 'analyst', 'critic', 'reporter'];
+  const laneY = i => T + 40 + i * 92;
+  el('text', { x: 40, y: 56, fill: '#fff', 'font-size': 19, 'font-family': 'Geist' }, svg).textContent = 'Should the city replace its 9,400 sodium street lights with LED fixtures?';
+  for (let s = 0; s <= secs; s += 5) {
+    el('line', { x1: px(s), y1: T, x2: px(s), y2: T + 380, stroke: '#151515' }, svg);
+    el('text', { x: px(s), y: T + 404, fill: '#555', 'font-size': 11, 'text-anchor': 'middle' }, svg).textContent = s + 's';
+  }
+  lanes.forEach((n, i) => {
+    el('line', { x1: L, y1: laneY(i), x2: R, y2: laneY(i), stroke: '#262626', 'stroke-dasharray': '2 5' }, svg);
+    el('text', { x: L - 16, y: laneY(i) + 4, fill: '#777', 'font-size': 11, 'text-anchor': 'end' }, svg).textContent = n;
+  });
+  el('line', { x1: px(30), y1: T - 10, x2: px(30), y2: T + 386, stroke: '#ff2e88', 'stroke-width': 1, opacity: .5 }, svg);
+  el('text', { x: px(30), y: T - 18, fill: '#ff2e88', 'font-size': 11, 'text-anchor': 'end', opacity: .7 }, svg).textContent = 'deadline';
+  // the trace: stage changes are steps between lanes, events are small deflections on the current lane
+  const pts = []; const at = (s, lane, j = 0) => pts.push([px(s), laneY(lane) + j]);
+  at(0, 0); at(0.4, 0, -14); at(0.8, 0);
+  [1.9, 2.6, 3.4, 4.1, 5.2, 6.0, 6.9, 7.5, 8.8, 9.6, 10.4].forEach(s => { at(s - .15, 0); at(s, 0, -22 - (s * 7 % 13)); at(s + .15, 0); });
+  at(11.0, 0); at(11.3, 1);
+  [12.6, 13.9, 15.1, 15.9].forEach(s => { at(s - .15, 1); at(s, 1, -18); at(s + .15, 1); });
+  at(16.2, 1); at(16.45, 2);
+  const crit = [[16.9, 's'], [17.15, 's'], [17.4, 'x'], [17.6, 'p']];
+  crit.forEach(([s, v]) => { at(s - .08, 2); at(s, 2, v === 'x' ? 60 : -18); at(s + .08, 2); });
+  at(17.8, 2); at(18.0, 3); at(18.4, 3, -10); at(18.6, 3);
+  const d = 'M ' + pts.map(p => p.join(' ')).join(' L ');
+  const glow = el('path', { d, fill: 'none', stroke: '#fff', 'stroke-width': 4, opacity: .12, 'stroke-linejoin': 'round' }, svg);
+  const pen = el('path', { d, fill: 'none', stroke: '#f2f2ee', 'stroke-width': 1.2, 'stroke-linejoin': 'round' }, svg);
+  const len = pen.getTotalLength();
+  [pen, glow].forEach(p => { p.style.strokeDasharray = len; p.style.strokeDashoffset = len; });
+  const nib = el('circle', { r: 3.5, fill: '#fff' }, svg);
+  const notes = [
+    [5.2, 0, '11 sources, 3 tools'], [13.9, 1, '4 claims drafted'], [17.4, 2, 'claim 3 struck: source says 6 to 11 years'], [18.4, 3, 'report at 18.4 s'],
+  ];
+  const noteEls = notes.map(([s, lane, t]) => {
+    const isX = t.startsWith('claim 3');
+    const n = el('text', { x: px(s) + 10, y: laneY(lane) + (isX ? 78 : -34), fill: isX ? '#ff2e88' : '#aaa', 'font-size': 11, opacity: 0 }, svg); n.textContent = t; return [s, n];
+  });
+  const spike = el('circle', { cx: px(17.4), cy: laneY(2) + 60, r: 0, fill: '#ff2e88' }, svg);
+  const verdict = el('text', { x: L, y: 610, fill: '#fff', 'font-size': 18, 'font-family': 'Geist', opacity: 0 }, svg); verdict.textContent = 'Proceed, at 3000K, phased over four budget years.';
+  const stats = el('text', { x: R, y: 610, fill: '#777', 'font-size': 12, 'text-anchor': 'end', opacity: 0 }, svg); stats.textContent = '3 held · 1 struck · 11.6 s under budget';
+  const dur = 5200; const t0 = performance.now();
+  (function frame(now) {
+    if (stale()) return;
+    const k = Math.min(1, (now - t0) / dur);
+    const off = len * (1 - k);
+    pen.style.strokeDashoffset = off; glow.style.strokeDashoffset = off;
+    const p = pen.getPointAtLength(len * k); nib.setAttribute('cx', p.x); nib.setAttribute('cy', p.y);
+    const sNow = (p.x - L) / (R - L) * secs;
+    noteEls.forEach(([s, n]) => { if (sNow >= s) { n.style.transition = 'opacity .4s'; n.setAttribute('opacity', 1); } });
+    if (sNow >= 17.4) { spike.style.transition = 'r .3s'; spike.setAttribute('r', 3.5); }
+    if (k < 1) requestAnimationFrame(frame);
+    else { [verdict, stats].forEach(n => { n.style.transition = 'opacity .8s'; n.setAttribute('opacity', 1); }); }
+  })(t0);
+}
+
+const players = { A: playA, B: playB, C: playC, D: playD };
+document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () => players[b.dataset.replay]()));
+const seen = new IntersectionObserver(entries => entries.forEach(e => {
+  if (e.isIntersecting && !e.target.dataset.played) { e.target.dataset.played = 1; players[e.target.id](); }
+}), { threshold: .45 });
+document.fonts.ready.then(() => ['A', 'B', 'C', 'D'].forEach(id => seen.observe(document.getElementById(id))));
+</script>
+</body>
+</html>
