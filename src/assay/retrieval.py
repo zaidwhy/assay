@@ -78,7 +78,8 @@ def reciprocal_rank_fusion(rankings: list[list[int]], k: int) -> dict[int, float
 
 class HybridRetriever:
     def __init__(self, embedder: Embedder, reranker: Reranker, *, rrf_k: int, fuse_top: int, rerank_top: int,
-                 dense_pool: int = 24, model_input_chars: int = 800) -> None:
+                 dense_pool: int = 24, model_input_chars: int = 800,
+                 min_source_rerank: float = float("-inf")) -> None:
         self.embedder = embedder
         self.reranker = reranker
         self.rrf_k = rrf_k
@@ -86,6 +87,7 @@ class HybridRetriever:
         self.rerank_top = rerank_top
         self.dense_pool = dense_pool
         self.model_input_chars = model_input_chars
+        self.min_source_rerank = min_source_rerank
 
     def rank(self, query: str, chunks: list[Chunk]) -> list[RankedChunk]:
         """Top `rerank_top` chunks for the query. CPU-bound; call through `rank_async` from async code."""
@@ -113,6 +115,14 @@ class HybridRetriever:
         shortlist = sorted(fused, key=lambda i: fused[i], reverse=True)[: self.fuse_top]
         rerank_scores = self.reranker.score(query, [texts[i][: self.model_input_chars] for i in shortlist])
         reranked = sorted(zip(shortlist, rerank_scores, strict=True), key=lambda pair: pair[1], reverse=True)
+        # A source whose best passage the cross-encoder scores below the floor is off topic (a
+        # survey paper surfaced by a keyword); none of its chunks may reach the Analyst.
+        best_by_source: dict[int, float] = {}
+        for index, score in reranked:
+            source_id = chunks[index].source_id
+            best_by_source[source_id] = max(best_by_source.get(source_id, score), score)
+        reranked = [(i, score) for i, score in reranked
+                    if best_by_source[chunks[i].source_id] >= self.min_source_rerank]
         return [
             RankedChunk(chunk=chunks[index], rank=position + 1, fused_score=round(fused[index], 6),
                         rerank_score=round(score, 4))

@@ -63,8 +63,25 @@ def baseline_plan(question: str) -> ResearchPlan:
     )
 
 
+_SCHOLARLY = re.compile(
+    r"\b(paper|papers|study|studies|research|researchers|arxiv|preprint|peer[- ]reviewed|journal|theorem|"
+    r"proof|algorithm|neural|transformer|machine learning|deep learning|dataset|benchmark|quantum|"
+    r"physics|cosmolog\w*|genom\w*|protein|molecul\w*|clinical trial|meta-analysis|state of research|"
+    r"literature|citation|hypothesis|empirical)\b",
+    re.I,
+)
+
+
+def is_scholarly(question: str) -> bool:
+    """Whether arXiv is worth asking. For everyday questions it returns keyword-matched papers that crowd out
+    relevant sources."""
+    return bool(_SCHOLARLY.search(question))
+
+
 def build_plan(question: str, proposed: list[ToolCall], available: set[str]) -> ResearchPlan:
     """Keep valid, distinct tool calls, and make sure the question itself is always searched."""
+    if not is_scholarly(question):
+        available = available - {"arxiv"}
     calls: list[ToolCall] = []
     seen: set[tuple[str, str]] = set()
     baseline = baseline_plan(question).tool_calls
@@ -86,7 +103,8 @@ def build_plan(question: str, proposed: list[ToolCall], available: set[str]) -> 
 
 
 async def plan(ctx: RunContext, request: ResearcherInput, *, timeout_s: float) -> ResearchPlan:
-    specs = [tool.spec() for name, tool in ctx.tools.items() if name in QUERY_TOOLS]
+    offered = set(QUERY_TOOLS) if is_scholarly(request.question) else set(QUERY_TOOLS) - {"arxiv"}
+    specs = [tool.spec() for name, tool in ctx.tools.items() if name in offered]
     user = f"Question: {request.question}"
     if request.prior_findings:
         user += "\n\nFindings from earlier questions in this session:\n" + "\n".join(

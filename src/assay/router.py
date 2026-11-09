@@ -7,6 +7,7 @@ was a fallback, and how many failed attempts came before it.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -70,7 +71,9 @@ def build_chain(settings: Settings, environ: dict[str, str] | None = None) -> di
     """Ordered deployments per tier, skipping any whose key variable is absent."""
     env = os.environ if environ is None else environ
     providers: list[tuple[str, str | None, dict[Tier, str], dict[str, Any]]] = [
-        ("groq", "GROQ_API_KEY", {"fast": settings.groq_fast_model, "strong": settings.groq_strong_model}, {}),
+        # gpt-oss reasons before answering; "low" keeps that inside the stage budgets.
+        ("groq", "GROQ_API_KEY", {"fast": settings.groq_fast_model, "strong": settings.groq_strong_model},
+         {"reasoning_effort": "low"}),
         (
             "openrouter",
             "OPENROUTER_API_KEY",
@@ -154,6 +157,9 @@ class RouterLLM:
                 )
             for i, name in enumerate(names[:-1]):
                 fallbacks.append({name: names[i + 1 :]})
+        # litellm rejects a call outright when a deployment's parallel slots are full; waiting here
+        # queues the call instead, so a run with many claims does not strike them as provider failures.
+        self._slots = asyncio.Semaphore(settings.provider_max_parallel)
         self._router = Router(
             model_list=model_list,
             fallbacks=fallbacks,
@@ -199,7 +205,8 @@ class RouterLLM:
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
         try:
-            response = await self._router.acompletion(model=primary, messages=messages, **kwargs)
+            async with self._slots:
+                response = await self._router.acompletion(model=primary, messages=messages, **kwargs)
         finally:
             failed_attempts = _attempts.take(call_id)
         answered_by = (getattr(response, "_hidden_params", None) or {}).get("model_id") or primary

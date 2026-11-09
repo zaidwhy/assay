@@ -46,3 +46,27 @@ def test_impact_classifier_flags_keywords_and_explicit_requests() -> None:
     assert classify("What is the capital of Australia?", "high", False).reasons == ["request set impact=high"]
     assert not classify("What is the capital of Australia?", None, False).high
     assert classify("Is this plan sound?", None, True, "affects savings").high
+
+
+def test_arxiv_is_only_planned_for_scholarly_questions() -> None:
+    from assay.agents.researcher import build_plan
+    from assay.router import ToolCall
+
+    proposed = [ToolCall(name="arxiv", arguments={"query": "street lights"}),
+                ToolCall(name="web_search", arguments={"query": "street lights"})]
+    tools = {"web_search", "wikipedia", "arxiv", "fetch"}
+    everyday = build_plan("Do LED street lights reduce crime at night?", proposed, tools)
+    scholarly = build_plan("What does recent research say about LED street lights and crime?", proposed, tools)
+    assert "arxiv" not in {c.name for c in everyday.tool_calls}
+    assert "arxiv" in {c.name for c in scholarly.tool_calls}
+
+
+def test_sources_below_the_rerank_floor_are_dropped(settings: Settings) -> None:
+    chunks = [
+        Chunk(id="s1:c0", source_id=1, start=0, end=10, text="Canberra is the capital city of Australia."),
+        Chunk(id="s2:c0", source_id=2, start=0, end=10, text="Dark energy survey cosmology results."),
+    ]
+    retriever = offline_retriever(settings)
+    retriever.min_source_rerank = 1.0  # the overlap reranker scores the off-topic chunk 0
+    ranked = retriever.rank("capital city of Australia", chunks)
+    assert [r.chunk.source_id for r in ranked] == [1]

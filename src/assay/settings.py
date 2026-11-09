@@ -55,12 +55,15 @@ class Settings(BaseSettings):
     rerank_top: int = 12
     dense_pool: int = Field(default=24, ge=1, le=1000)
     model_input_chars: int = Field(default=800, ge=100, le=20_000)
+    # Cross-encoder logit floor for a source's best chunk. MiniLM scores on-topic passages
+    # around +5 and unrelated ones around -10.
+    min_source_rerank: float = -4.0
     embed_model: str = "BAAI/bge-small-en-v1.5"
     rerank_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
 
     # LLM chain. A hosted deployment is used only when its key variable is present.
-    groq_fast_model: str = "groq/llama-3.1-8b-instant"
-    groq_strong_model: str = "groq/llama-3.3-70b-versatile"
+    groq_fast_model: str = "groq/openai/gpt-oss-20b"
+    groq_strong_model: str = "groq/openai/gpt-oss-120b"
     openrouter_fast_model: str = "openrouter/meta-llama/llama-3.1-8b-instruct"
     openrouter_strong_model: str = "openrouter/meta-llama/llama-3.3-70b-instruct"
     ollama_model: str = "ollama_chat/llama3.2:3b"
