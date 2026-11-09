@@ -1,0 +1,20 @@
+{"id": "a01", "question": "What is the capital city of Australia?", "answerable": true, "answers": ["Canberra"]}
+{"id": "a02", "question": "Who wrote the novel Pride and Prejudice?", "answerable": true, "answers": ["Jane Austen", "Austen"]}
+{"id": "a03", "question": "What is the chemical symbol for gold?", "answerable": true, "answers": ["Au"]}
+{"id": "a04", "question": "In what year did the Berlin Wall fall?", "answerable": true, "answers": ["1989"]}
+{"id": "a05", "question": "Which planet is the largest in the Solar System?", "answerable": true, "answers": ["Jupiter"]}
+{"id": "a06", "question": "At what temperature in Celsius does water boil at sea level?", "answerable": true, "answers": ["100"]}
+{"id": "a07", "question": "Who developed the general theory of relativity?", "answerable": true, "answers": ["Einstein"]}
+{"id": "a08", "question": "Which programming language did Guido van Rossum create?", "answerable": true, "answers": ["Python"]}
+{"id": "a09", "question": "What is the highest mountain above sea level on Earth?", "answerable": true, "answers": ["Everest"]}
+{"id": "a10", "question": "Who painted the Mona Lisa?", "answerable": true, "answers": ["Leonardo", "da Vinci"]}
+{"id": "a11", "question": "What is the largest ocean on Earth?", "answerable": true, "answers": ["Pacific"]}
+{"id": "a12", "question": "In which year did humans first land on the Moon?", "answerable": true, "answers": ["1969"]}
+{"id": "a13", "question": "How many bones are in the adult human skeleton?", "answerable": true, "answers": ["206"]}
+{"id": "a14", "question": "What is the official currency of Japan?", "answerable": true, "answers": ["yen"]}
+{"id": "u01", "question": "In what year did Isaac Newton receive the Turing Award?", "answerable": false, "answers": []}
+{"id": "u02", "question": "What is the name of the fifth moon of Venus?", "answerable": false, "answers": []}
+{"id": "u03", "question": "Who was the first person to walk on the surface of Mars?", "answerable": false, "answers": []}
+{"id": "u04", "question": "What was the exact population of Atlantis in 1500 BC?", "answerable": false, "answers": []}
+{"id": "u05", "question": "Which country won the 2042 FIFA World Cup final?", "answerable": false, "answers": []}
+{"id": "u06", "question": "What did Shakespeare say in his 1995 television interview?", "answerable": false, "answers": []}
