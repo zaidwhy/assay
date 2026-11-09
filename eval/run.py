@@ -83,6 +83,11 @@ def summarize(items: list[dict[str, Any]]) -> dict[str, Any]:
         "items": len(items),
         "accuracy": round(sum(i["correct"] for i in items) / len(items), 4) if items else None,
         "answerable_accuracy": _share([i["correct"] for i in items if i["answerable"]]),
+        # Separates "found and verified the answer, then abstained on the floor" from "never found it".
+        "answerable_answer_in_findings": _share([i["answer_found"] for i in items if i["answerable"]]),
+        "unanswerable_with_supported_claims": sum(
+            1 for i in items if not i["answerable"] and i["claims_supported"]
+        ),
         "abstention_precision": round(len(true_abstentions) / len(abstained), 4) if abstained else None,
         "abstention_recall": round(len(true_abstentions) / len(should_abstain), 4) if should_abstain else None,
         "faithfulness_mean": round(statistics.fmean(faithfulness), 4) if faithfulness else None,
@@ -113,14 +118,18 @@ async def finish_run(app: Any, run_id: str) -> None:
     await orchestrator.wait(run_id)
 
 
-async def run_all(questions: list[LabelledQuestion], max_seconds: float, db_path: Path) -> dict[str, Any]:
+async def run_all(questions: list[LabelledQuestion], max_seconds: float, db_path: Path,
+                  pause_s: float = 0.0) -> dict[str, Any]:
     settings = Settings(db_path=db_path)
     app = create_app(settings, grade_with_llm=False)
     items = []
     async with app.router.lifespan_context(app):
         orchestrator = app.state.orchestrator
         chain = app.state.llm.describe()
-        for item in questions:
+        for position, item in enumerate(questions):
+            if position and pause_s:
+                # Free hosted tiers meter tokens per minute; pacing keeps every run on the same deployment.
+                await asyncio.sleep(pause_s)
             run_id = orchestrator.submit(ResearchRequest(question=item.question, max_seconds=max_seconds))
             await finish_run(app, run_id)
             run = run_view(app.state.store, run_id)
@@ -132,6 +141,7 @@ async def run_all(questions: list[LabelledQuestion], max_seconds: float, db_path
     return {
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "max_seconds": max_seconds,
+        "pause_seconds": pause_s,
         "llm_chain": chain,
         "summary": summarize(items),
         "items": items,
@@ -142,6 +152,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run the labelled question set through assay.")
     parser.add_argument("--max-seconds", type=float, default=30.0)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--pause-seconds", type=float, default=0.0)
     parser.add_argument("--ids", type=str, default="")
     parser.add_argument("--db", type=Path, default=HERE / "eval.db")
     parser.add_argument("--out", type=Path, default=HERE / "results.json")
@@ -154,7 +165,7 @@ def main() -> None:
         wanted = set(args.ids.split(","))
         questions = [q for q in questions if q.id in wanted]
     questions = questions[: args.limit] if args.limit else questions
-    results = asyncio.run(run_all(questions, args.max_seconds, args.db))
+    results = asyncio.run(run_all(questions, args.max_seconds, args.db, args.pause_seconds))
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps({"llm_chain": results["llm_chain"], **results["summary"]}, indent=2))
 
