@@ -3,6 +3,8 @@ name = "assay"
 version = "0.1.0"
 description = "Research reports where every claim is checked against the exact passage it cites."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Zaid Ali Syed", email = "zaidsyed7021@gmail.com" }
 ]
