@@ -17,9 +17,8 @@
     <form class="ask" id="ask">
       <label class="sr" for="question">Research question</label>
       <input id="question" name="question" maxlength="1000" minlength="8" autocomplete="off" placeholder="Ask a question that needs evidence, e.g. Should our city switch street lights to LED?" required>
-      <select id="impact" title="High impact runs stop for human approval before the report is released">
+      <select id="impact" title="Medical, legal, financial, safety and irreversible questions, and any run the Analyst flags, always stop for approval. High makes every run stop.">
         <option value="">Impact: auto</option>
-        <option value="normal">Normal</option>
         <option value="high">High (needs approval)</option>
       </select>
       <button class="btn primary" id="go" type="submit">Research</button>

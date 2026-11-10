@@ -121,12 +121,29 @@ async def judge(ctx: RunContext, request: CriticInput, *, timeout_s: float) -> C
 
 
 _SENTENCE = re.compile(r"[^.!?\n]+[.!?]*")
+_SENTENCE_END = re.compile(r"[.!?\n]")
 PASSAGE_CONTEXT_CHARS = 260
+# A web page often runs navigation into the first sentence with no full stop between them; a lead-in
+# longer than this before the quoted words is page chrome, not the sentence the quote belongs to.
+MAX_SENTENCE_LEAD_CHARS = 120
+MAX_SENTENCE_TAIL_CHARS = 200
 
 
-def passage_for(quote: str, chunks: list[Chunk]) -> dict | None:
-    """The sentence in the cited chunks that best matches the quote, with its neighbours, so a reader
-    sees the words the verdict rests on rather than the start of a long chunk."""
+def _quote_location(quote: str, chunks: list[Chunk]) -> tuple[Chunk, int, int] | None:
+    """Where the quoted words sit in the raw chunk text, tolerant of case, punctuation and line breaks."""
+    tokens = _TOKEN.findall(_normalize(quote))
+    if not tokens:
+        return None
+    pattern = re.compile(r"[^a-z0-9]+".join(re.escape(t) for t in tokens), re.IGNORECASE)
+    for chunk in chunks:
+        # Searched in the raw text so offsets stay valid; curly quotes and dashes fall in the separator class.
+        found = pattern.search(chunk.text)
+        if found:
+            return chunk, found.start(), found.end()
+    return None
+
+
+def _best_sentence(quote: str, chunks: list[Chunk]) -> tuple[Chunk, int, int] | None:
     wanted = Counter(_TOKEN.findall(_normalize(quote)))
     if not wanted:
         return None
@@ -140,11 +157,33 @@ def passage_for(quote: str, chunks: list[Chunk]) -> dict | None:
     if best is None or best[0] == 0:
         return None
     _, chunk, sentence = best
-    start, end = sentence.span()
+    return chunk, *sentence.span()
+
+
+def passage_for(quote: str, chunks: list[Chunk]) -> dict | None:
+    """The sentence in the cited chunks that holds the quote, with its neighbours, so a reader sees the
+    words the verdict rests on rather than the start of a long chunk. When the quoted words occur
+    verbatim, the highlight is the sentence around them, trimmed to the quote if the sentence start
+    is far away (page chrome); otherwise it is the best-matching sentence."""
+    located = _quote_location(quote, chunks)
+    if located:
+        chunk, start, end = located
+        lead_stop = max((m.end() for m in _SENTENCE_END.finditer(chunk.text, 0, start)), default=0)
+        if start - lead_stop <= MAX_SENTENCE_LEAD_CHARS:
+            start = lead_stop
+        tail_stop = _SENTENCE_END.search(chunk.text, end, end + MAX_SENTENCE_TAIL_CHARS)
+        if tail_stop:
+            end = tail_stop.start() if tail_stop.group() == "\n" else tail_stop.end()
+    else:
+        found = _best_sentence(quote, chunks)
+        if found is None:
+            return None
+        chunk, start, end = found
     lead = chunk.text[max(0, start - PASSAGE_CONTEXT_CHARS):start]
     tail = chunk.text[end:end + PASSAGE_CONTEXT_CHARS]
     return {"chunk_id": chunk.id, "before": ("..." if start > PASSAGE_CONTEXT_CHARS else "") + lead,
-            "match": sentence.group(), "after": tail + ("..." if end + PASSAGE_CONTEXT_CHARS < len(chunk.text) else "")}
+            "match": chunk.text[start:end],
+            "after": tail + ("..." if end + PASSAGE_CONTEXT_CHARS < len(chunk.text) else "")}
 
 
 def _emit_verdict(ctx: RunContext, verdict: ClaimVerdict, chunks: list[Chunk] | None = None) -> None:

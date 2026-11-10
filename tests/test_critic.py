@@ -88,6 +88,19 @@ def test_passage_for_points_at_the_sentence_the_quote_came_from() -> None:
     assert passage_for("", [chunk]) is None
 
 
+def test_passage_highlight_skips_page_navigation_run_into_the_sentence() -> None:
+    # Scraped forum pages carry menus and vote links with no full stop before the first sentence.
+    nav = "Hacker News new | past | comments | ask | show | jobs | submit login " * 3
+    text = nav + "user42 3 hours ago | parent | next The City of Chicago is funding a replacement of all its " \
+                 "sodium bulbs with LEDs. Other cities followed."
+    chunk = Chunk(id="s4:c0", source_id=4, start=0, end=len(text), text=text)
+    passage = passage_for("the city of chicago is funding a replacement", [chunk])
+    assert passage is not None
+    assert passage["match"].startswith("The City of Chicago")
+    assert passage["match"].endswith("with LEDs.")
+    assert "Hacker News" not in passage["match"]
+
+
 class RateLimitError(Exception):
     """Stands in for litellm's rate-limit error; only the class name is read."""
 

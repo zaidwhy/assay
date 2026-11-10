@@ -15,7 +15,7 @@ const EXAMPLES = [
   ['Should a small team adopt Rust instead of Go for a new backend service?', 'engineering trade-offs'],
 ];
 const STAGE_OF_STATE = { queued: null, planning: 'researching', researching: 'researching', analyzing: 'analyzing',
-  critiquing: 'critiquing', awaiting_approval: 'critiquing', reporting: 'reporting' };
+  critiquing: 'critiquing', awaiting_approval: null, reporting: 'reporting' };
 const STAGES = ['researching', 'analyzing', 'critiquing', 'reporting'];
 const TERMINAL = new Set(['done', 'abstained', 'rejected', 'failed']);
 const ORIGIN_WORD = { web: 'Web', wikipedia: 'Wikipedia', arxiv: 'arXiv', upload: 'Your document', memory: 'Earlier run' };
@@ -226,12 +226,15 @@ const HANDLERS = {
 /* ---------- painting ---------- */
 
 function paintFlow(stage, state) {
-  const reached = stage ? STAGES.indexOf(stage) : TERMINAL.has(state) ? STAGES.length : -1;
+  // At the approval gate the Critic is finished and nothing runs until a person decides.
+  const waiting = state === 'awaiting_approval';
+  const reached = stage ? STAGES.indexOf(stage) : TERMINAL.has(state) ? STAGES.length
+    : waiting ? STAGES.indexOf('reporting') : -1;
   document.querySelectorAll('.step').forEach((step, i) => {
     const s = step.dataset.stage;
     const finished = i < reached || (TERMINAL.has(state) && run.stageStart[s] != null);
     step.classList.toggle('done', finished);
-    step.classList.toggle('active', !finished && i === reached);
+    step.classList.toggle('active', !finished && !waiting && i === reached);
     const start = run.stageStart[s], end = run.stageEnd[s];
     step.querySelector('.t').textContent = start != null && end != null ? ((end - start) / 1000).toFixed(1) + ' s' : '';
   });
@@ -317,7 +320,8 @@ async function showDraft() {
     const view = await api(`/runs/${run.id}`);
     if (run.state !== 'awaiting_approval' || !view.draft) return;
     $('verdict').className = '';
-    $('verdict').textContent = view.draft.recommendation || 'Draft ready for review.';
+    $('verdict').textContent = view.draft.recommendation
+      || 'No recommendation was drafted. Judge from the verified claims below.';
     $('recommendation').textContent = 'Draft held for review. Only the verified claims below will be used in the released report.';
   } catch (err) {
     say(err.message, true);
