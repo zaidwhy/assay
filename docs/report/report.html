@@ -122,17 +122,18 @@ figcaption { font-size:8.5pt; color:var(--muted); margin-top:4px; }
 <h2 class="break">5. Evaluation</h2>
 <p>Every run is scored automatically: faithfulness (supported over judged claims), citation precision, relevance (embedding similarity plus an LLM grade with a reason), structure completeness, source diversity and reliability-weighted evidence. Separately, a harness runs a labelled set through the real pipeline: 14 questions with short known answers and 6 unanswerable or false-premise questions ("What is the name of the fifth moon of Venus?") where the right output is to decline or to reject the premise.</p>
 <table>
-<tr><th></th><th class="n">Run A</th><th class="n">Run B</th></tr>
-<tr><td>When, and code state</td><td class="n">9 Nov 22:10, before the conclusion check</td><td class="n">10 Nov 00:25, after it</td></tr>
-<tr><td>Runs within 30 s</td><td class="n">20 / 20</td><td class="n">20 / 20</td></tr>
-<tr><td>Latency p50 / p95</td><td class="n">16.0 s / 19.8 s</td><td class="n">15.5 s / 22.5 s</td></tr>
-<tr><td>Answerable: answer in a verified finding</td><td class="n">12 / 14</td><td class="n">12 / 14</td></tr>
-<tr><td>Answerable: answered correctly</td><td class="n">12 / 14</td><td class="n">5 / 14</td></tr>
-<tr><td>Unanswerable or false premise handled</td><td class="n">3 / 6</td><td class="n">6 / 6</td></tr>
-<tr><td>Mean faithfulness</td><td class="n">0.94</td><td class="n">0.39</td></tr>
+<tr><th></th><th class="n">Run A</th><th class="n">Run B</th><th class="n">Run C</th></tr>
+<tr><td>When, and code state</td><td class="n">9 Nov 22:10, before the conclusion check</td><td class="n">10 Nov 00:25, after it</td><td class="n">11 Nov 15:47, after the fixes</td></tr>
+<tr><td>Runs within 30 s</td><td class="n">20 / 20</td><td class="n">20 / 20</td><td class="n">20 / 20</td></tr>
+<tr><td>Latency p50 / p95</td><td class="n">16.0 s / 19.8 s</td><td class="n">15.5 s / 22.5 s</td><td class="n">19.2 s / 27.9 s</td></tr>
+<tr><td>Answerable: answer in a verified finding</td><td class="n">12 / 14</td><td class="n">12 / 14</td><td class="n">12 / 14</td></tr>
+<tr><td>Answerable: answered correctly</td><td class="n">12 / 14</td><td class="n">5 / 14</td><td class="n">12 / 14</td></tr>
+<tr><td>Unanswerable or false premise handled</td><td class="n">3 / 6</td><td class="n">6 / 6</td><td class="n">4 / 6</td></tr>
+<tr><td>Mean faithfulness</td><td class="n">0.94</td><td class="n">0.39</td><td class="n">0.81</td></tr>
 </table>
-<p><b>Run A</b> found the Atlantis failure described in section 3; the conclusion check that followed is why run B handles all six false-premise questions. <b>Run B</b> ran with the free tier's daily quotas nearly spent after a day of testing. Fifty-eight Critic calls failed for model capacity, and two bugs turned that into abstentions: the failures were labelled as invalid verdicts, and the never-checked claims counted against the 60 percent share, so runs whose correct answer was already verified (12 of 14) declined to answer. Both are fixed: unchecked claims are marked <span class="mono">checked: false</span>, kept out of the report, and left out of the share, and the page says capacity ran out instead of blaming the evidence. Whether that closes the gap between 12 answers found and 5 given is not yet measured; a rerun on a fresh daily quota is the next measurement.</p>
-<div class="box warn">Every number here comes from a recorded run (<span class="mono">eval/results.json</span> holds run B per item). None is estimated.</div>
+<p><b>Run A</b> found the Atlantis failure described in section 3; the conclusion check that followed is why run B handles all six false-premise questions. <b>Run B</b> ran with the free tier's daily quotas nearly spent after a day of testing. Fifty-eight Critic calls failed for model capacity, and two bugs turned that into abstentions: the failures were labelled as invalid verdicts, and the never-checked claims counted against the 60 percent share, so runs whose correct answer was already verified (12 of 14) declined to answer. Both are fixed: unchecked claims are marked <span class="mono">checked: false</span>, kept out of the report, and left out of the share, and the page says capacity ran out instead of blaming the evidence. Run C below measures whether that closes the gap between 12 answers found and 5 given.</p>
+<p><b>Run C</b> is that rerun, and it closes the gap: all 12 answerable questions with the answer in a verified finding were answered, and mean faithfulness is 0.81. It cost two things. False-premise handling fell to 4 of 6, because on the Mars and Atlantis questions the verdict hedged ("cannot be determined from the available findings") instead of rejecting the premise. And p95 latency rose to 27.9 s, still inside the 30 s budget, with a Qwen per-minute cap hit and one Planner and one Analyst timeout in the kept log.</p>
+<div class="box warn">Every number here comes from a recorded run (<span class="mono">eval/results.json</span> holds run C per item). None is estimated.</div>
 
 <h2>6. Verified on the live deployment</h2>
 <table>

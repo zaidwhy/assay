@@ -205,20 +205,20 @@ when the run abstains or its verdict rejects the premise in one of the item's la
 
 ### Results
 
-Two harness runs, 20 questions each, 30 s budget, paced so each model's per-minute quota refills.
+Three harness runs, 20 questions each, 30 s budget, paced so each model's per-minute quota refills.
 They are reported as they came out, including the second, which ran with the free tier's daily
 quotas nearly spent.
 
-| | Run A, 2026-11-09 22:10 IST | Run B, 2026-11-10 00:25 IST |
-|---|---|---|
-| Chain | Groq `gpt-oss-20b` / `gpt-oss-120b`, OpenRouter Llama 3.x fallback | Groq `gpt-oss-20b` / `gpt-oss-120b` / `qwen3.8-27b` |
-| Code | before the conclusion check | conclusion check, Groq backup model, top 8 passages |
-| Runs within 30 s | 20 of 20 | 20 of 20 |
-| Latency p50 / p95 | 16.0 s / 19.8 s | 15.5 s / 22.5 s |
-| Answerable: answer in a verified finding | 12 of 14 | 12 of 14 |
-| Answerable: correct (answered, not abstained) | 12 of 14 | 5 of 14 |
-| Unanswerable or false premise handled | 3 of 6 (scored on abstention only) | 6 of 6 |
-| Mean faithfulness | 0.94 | 0.39 |
+| | Run A, 2026-11-09 22:10 IST | Run B, 2026-11-10 00:25 IST | Run C, 2026-11-11 15:47 IST |
+|---|---|---|---|
+| Chain | Groq `gpt-oss-20b` / `gpt-oss-120b`, OpenRouter Llama 3.x fallback | Groq `gpt-oss-20b` / `gpt-oss-120b` / `qwen3.8-27b` | same as B, fresh daily quota |
+| Code | before the conclusion check | conclusion check, Groq backup model, top 8 passages | B plus the unchecked-claim fixes |
+| Runs within 30 s | 20 of 20 | 20 of 20 | 20 of 20 |
+| Latency p50 / p95 | 16.0 s / 19.8 s | 15.5 s / 22.5 s | 19.2 s / 27.9 s |
+| Answerable: answer in a verified finding | 12 of 14 | 12 of 14 | 12 of 14 |
+| Answerable: correct (answered, not abstained) | 12 of 14 | 5 of 14 | 12 of 14 |
+| Unanswerable or false premise handled | 3 of 6 (scored on abstention only) | 6 of 6 | 4 of 6 |
+| Mean faithfulness | 0.94 | 0.39 | 0.81 |
 
 What happened between them. Run A exposed the Atlantis failure: a verified finding about a Bronze
 Age city on Thera became "the population of Atlantis is about 30,000". The conclusion check that
@@ -227,5 +227,14 @@ fixed after it: with the daily quota of `gpt-oss-20b` spent and Qwen over its pe
 Critic calls failed for capacity, and those claims were (1) labelled "critic reply was not a valid
 verdict" and (2) counted against the 60 percent share, so runs whose answer was already verified
 abstained. Unchecked claims are now marked `checked: false`, kept out of the report, and left out of
-the share. The fixes target the gap between 12 answers found and 5 given; whether they close it
-is not measured yet, and a rerun on a fresh daily quota is the next measurement. `eval/results.json` holds run B per item.
+the share. The fixes target the gap between 12 answers found and 5 given.
+
+Run C, on a fresh daily quota with those fixes, closes it: every answerable question whose answer
+was in a verified finding was answered (12 of 14; a05 and a10 abstained with no answer found).
+Mean faithfulness is back to 0.81. Two costs showed up. False-premise handling fell from 6 of 6 to
+4 of 6: on u03 (first person on Mars) and u04 (population of Atlantis) the verdicts read "No
+verified finding identifies a specific human as the first person to walk on the surface of Mars"
+and "cannot be determined from the available findings", which hedge instead of rejecting the
+premise, so the harness scores them wrong. Latency rose (p95 27.9 s, still inside 30 s): Qwen hit
+its per-minute input cap, and the kept log tail (the last 40 lines; earlier ones were not saved) shows
+a Planner timeout on u04, which then used the baseline plan, and an Analyst timeout on u02. `eval/results.json` holds run C per item.

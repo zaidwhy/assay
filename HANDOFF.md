@@ -21,7 +21,8 @@ Updated 2026-11-10 05:10 IST.
 ## In flight
 
 - Walkthrough film: done. `video/out/assay-walkthrough.mp4` (gitignored), built from six live runs; tooling and `video/VOICEOVER.md` are committed. In the Llama 2 PDF scene the held claims cite the arXiv copy and blog reviews, not the upload, and the narration says so.
-- D-203: rerun the eval on a fresh Groq daily quota (200k tokens per model per day, rolling), then update the README tables and re-render the report PDF.
+- D-203 done 2026-11-11: Run C (15:47 IST, fresh quota) answered 12 of 14 answerable (gap closed), faithfulness 0.81, false premise 4 of 6, p50/p95 19.2/27.9 s. README table, report section 5 and `docs/assay-report.pdf` (5 pages) updated.
+- Open from Run C: on u03 (Mars) and u04 (Atlantis) the verdict hedges ("cannot be determined") instead of rejecting the premise. Fixing the conclusion prompt is the next change; do not loosen the harness phrases to make them pass.
 
 ## Overnight decisions (review)
 
