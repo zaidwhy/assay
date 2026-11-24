@@ -1,5 +1,7 @@
 # assay
 
+<img src=".github/hero.webp" alt="A black touchstone with two gold streaks beside two corked glass bottles and a loupe on a workbench." width="100%">
+
 A research service that answers a question with a decision report in which every finding is a claim
 that was checked against the exact passage it cites.
 
